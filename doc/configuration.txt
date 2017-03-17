@@ -1,0 +1,61 @@
+$BASE/.rootrc:
+This file is for setting ROOT environment. See the following to properly use it:
+https://root.cern.ch/root/html/TAttText.html
+ftp://root.cern.ch/root/doc/ROOTUsersGuideHTML/ch02s07.html
+https://root.cern.ch/root/roottalk/roottalk01/2867.html
+
+Here is an example of a .rootrc file:
+Gui.DefaultFont:        -*-helvetica-medium-r-normal-*-14-*-*-*-*-*-iso8859-1
+Gui.MenuFont:           -*-helvetica-medium-r-normal-*-14-*-*-*-*-*-iso8859-1
+Gui.MenuHiFont:         -*-helvetica-bold-r-normal-*-14-*-*-*-*-*-iso8859-1
+Gui.DocFixedFont:       -*-courier-medium-r-normal-*-14-*-*-*-*-*-iso8859-1
+Gui.DocPropFont:        -*-helvetica-medium-r-normal-*-14-*-*-*-*-*-iso8859-1
+Gui.IconFont:           -*-helvetica-medium-r-normal-*-12-*-*-*-*-*-iso8859-1
+Gui.StatusFont:         -*-helvetica-medium-r-normal-*-12-*-*-*-*-*-iso8859-1
+Root.MemStat:           1
+Root.ObjectStat:        1
+
+If needed we can also add additional instructions in a C file and run it on each ROOT login:
+Rint.Logon: /path/to/rootlogon.C
+
+/---------------------------
+/--- rootlogon.C -----------
+/---------------------------
+{
+   TStyle *mystyle = new TStyle("mystyle", "My own ROOT style");
+
+   mystyle->SetCanvasBorderMode(0);
+   mystyle->SetFrameBorderMode(0);
+   mystyle->SetPalette(1,0);
+   mystyle->SetOptTitle(0);
+   mystyle->SetCanvasColor(0);
+
+   mystyle->SetStatFontSize(0.024);
+   mystyle->SetStatBorderSize(1);
+   mystyle->SetStatColor(kGray);
+   mystyle->SetStatX(0.925);
+   mystyle->SetStatY(0.925);
+   mystyle->SetStatW(0.13);
+
+   mystyle->SetTextFont(132);
+   mystyle->SetTextSize(0.08);
+
+   mystyle->SetLabelSize(0.03,"xyz");
+   mystyle->SetLabelOffset(0.01,"xyz");
+   mystyle->SetPadTickX(1);
+   mystyle->SetPadTickY(1);
+
+   mystyle->SetCanvasDefX(100);
+   mystyle->SetCanvasDefY(50);
+   mystyle->SetCanvasDefW(900);
+   mystyle->SetCanvasDefH(600);
+   mystyle->SetPadBottomMargin(0.1);
+   mystyle->SetPadTopMargin(0.04);
+   mystyle->SetPadLeftMargin(0.125);
+   mystyle->SetPadRightMargin(0.04);
+
+   gROOT->SetStyle("mystyle");
+   cout << "Setting custom style from /path/to/.rootlogon.C" << endl;
+   return;
+}
+

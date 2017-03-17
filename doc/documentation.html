@@ -1,0 +1,591 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+   <title>Software for SiPM characterization</title>
+   <link rel="stylesheet" type="text/css" href="style_sheet.css">
+</head>
+
+<body>
+
+<h1 id="#top">Software for SiPM characterization with CAMAC, scope, bias voltage and table position support</h1>
+
+<div>
+   <h2>Contents</h2>
+   <ol>
+      <li><a href="#install">Installation</a></li>
+      <li><a href="#softrun">Running the software</a></li>
+      <li><a href="#featall">Program feature overview</a></li>
+      <ol type="a">
+         <li><a href="#featnew">Current program version (trunk)</a></li>
+         <li><a href="#featold">Old program version (trunk_v0.9)</a></li>
+      </ol>
+      <li><a href="#prepmeasure">Preparing for measurements</a></li>
+      <ol type="a">
+         <li><a href="#presoft">Pre-software checks</a></li>
+         <li><a href="#exppremeasure">Experimental setup pre-measurement checks</a></li>
+         <li><a href="#softpremeasure">Software pre-measurement checks</a></li>
+      </ol>
+      <li><a href="#measures">Measurements</a></li>
+      <ol type="a">
+         <li><a href="#meassettings">Measurement settings</a></li>
+         <li><a href="#tempchamber">Temperature chamber considerations</a></li>
+         <li><a href="#movement">Movement table</a></li>
+         <li><a href="#biasvolt">Bias voltage supply</a></li>
+      </ol>
+      <li><a href="#measfiles">Measurement files</a></li>
+      <ol type="a">
+         <li><a href="#rootfile">ROOT file structure</a></li>
+         <li><a href="#fileopen">Opening measurement files</a></li>
+      </ol>
+      <li><a href="#analysis">Analysis</a></li>
+      <li><a href="#changelog">Change log</a></li>
+   </ol>
+
+   <h2 id="install">1. Installation</h2>
+   <p>Pre-requisites for offline and online modes:</p>
+   <ol type="a">
+      <li>Offline mode (support for histogramming and analysis):</li>
+      <ul>
+         <li>A newer (5.34 or higher, support for version 6 not added yet) pro version of ROOT (<a href="https://root.cern.ch" target="_blank">https://root.cern.ch</a>).</li>
+      </ul>
+      <li>Online mode (support for histogramming, analysis and data acquisition):</li>
+      <ul>
+         <li>Perl developer package libperl-dev for installation of net-snmp (<tt>sudo apt-get install libperl-dev</tt>).</li>
+         <li>Current version of net-snmp (<a href="http://www.net-snmp.org" target="_blank">http://www.net-snmp.org</a>).</li>
+         <li>A newer (5.34 or higher, support for version 6 not added yet) pro version of ROOT (<a href="https://root.cern.ch" target="_blank">https://root.cern.ch</a>).</li>
+	 <li>USB developer package libusb-dev (<tt>sudo apt-get install libusb-dev</tt>).</li>
+      </ul>
+   </ol>
+
+   <p>Installation is done through the usual <tt>./configure</tt> and <tt>make</tt> commands to enable the use of this software with 32 bit or 64 bit systems.</p>
+
+   <p>Configure takes the following arguments:</p>
+   <ul>
+     <li>First argument is the configure option (help, nomake, all, clean, compress):</li>
+     <ul style="list-style-type:none">
+        <li><tt>help</tt> = shows configure help</li>
+        <li><tt>all</tt> = prepares OS dependent files and makes the needed usb daq libraries</li>
+        <li><tt>nomake</tt> = only prepares OS dependent files</li>
+        <li><tt>clean</tt> = cleans the installation to the base file structure (keeps the results directory)</li>
+        <li><tt>compress</tt> = compresses the base installation into a tar-ball</li>
+     </ul>
+     <li>Second argument is the online/offline configure setting (only used when first argument is nomake or all), that enables the software to work with:</li>
+     <ul style="list-style-type:none">
+        <li><tt>I</tt> = a connected CAMAC and scope (Online mode)</li>
+        <li><tt>S</tt> = only a connected scope (Offline mode with oscilloscope connection)</li>
+        <li><tt>O</tt> = with no connected devices (Offline mode)</li>
+     </ul>
+     <li>The following arguments set specific computer details and can be entered in any order:</li>
+     <ol type="a">
+        <li><tt>--root-install=/path/to/root/directory</tt> = The ROOT install directory, if it is not installed in a standard location (especially needed when running the program with superuser, since it usually does not have the required environment variables).</li>
+        <li><tt>--snmp-install=/path/to/snmp/directory</tt> = The NET-SNMP install directory, if it is not installed in a standard location.</li>
+        <li><tt>--ostype=YYYY</tt> = Optional argument to specifically set the OS type to either 32bit (<tt>YYYY = i686</tt>) or 64bit (<tt>YYYY = x86_64</tt>). If argument not supplied, the configure script will try to get this information automatically through uname.</li>
+     </ol>
+   </ul>
+
+   <p>Running <tt>./configure</tt> or <tt>./configure help</tt> will give more information on specific uses.</p>
+   <p>Example:</p>
+   <div class="codeback"><pre><code>./configure all I --root-install=/opt/root --snmp-install=/opt/net-snmp --ostype=i686</code></pre></div>
+   
+   <p>Once configuration is done, a Makefile will be generated and further installation is done by running <tt>make</tt>. Running <tt>make relib</tt> will only recreate the libraries in case something has been edited in them.</p>
+   <p>Example:</p>
+   <div class="codeback"><pre><code>make</code></pre></div>
+
+   <p>On first run of the program, make sure to copy the <tt>./mpod/WIENER-CRATE-MIB.txt</tt> to the MIB directory in your installation of net-snmp. This can be in <tt>~/.snmp/mibs</tt> or <tt>[/snmp/install/directory]/share/snmp/mibs</tt>.</p>
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="softrun">2. Running the software</h2>
+   <p>Once installation is performed, use</p>
+   <div class="codeback"><pre><code>./start.sh</code></pre></div>
+   <p>to start the software in offline mode or</p>
+   <div class="codeback"><pre><code>sudo ./start.sh</code></pre></div>
+   <p>to start the software in online mode. Once the software starts, it will let you know (in the terminal) if connection to CAMAC was correctly established.</p>
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="featall">3. Program feature overview</h2>
+   <p>This part describes the different parts of the software and a short description on what they do.</p>
+
+   <h3 id="featnew">3a. Current program version (trunk)</h3>
+   <p>The main window is divided into 4 tabs and then further into subwindows:</p>
+   <ol>
+      <li>Measurement tab:</li>
+      <ol type="a">
+         <li>Settings pane:</li>
+	 <ul>
+   	    <li>ON/OFF switches for voltage, surface, Z axis and rotation scans (ON when checked).</li>
+   	    <li>A voltage limiter: Sets the maximum output voltage that can be set under Output voltage (sample safety reasons).</li>
+   	    <li>Nr. of channels: The number of channels to measure. Each channel corresponds to an ADC/TDC pair.</li>
+   	    <li>Position units: For display, use either movement table native units or micrometers (table units default).</li>
+   	    <li>Rotation units: For display, use either rotation table native units or degrees (degrees default).</li>
+   	    <li>Scope IP: Sets the oscilloscope IP address for connections to a device.</li>
+            <li>LASER settings info panel: Additional information to be written to the output file header (most generally used for laser information).</li>
+            <li>Chamber temperature: Chamber temperature to be written to the output file (temperature not directly taken from the fieldpoint sensor).</li>
+            <li>Live histogram ON/OFF: ON/OFF switch for live histogram update. Offers quick overview of the current measurement. Should be avoided for scans.</li>
+	 </ul>
+         <li>Display: Display of the live histogram, when it is turned on.</li>
+         <li>Main measurement window:</li>
+	 <ul>
+            <li>Settings for bias voltage, table position and incidence angle measurements.</li>
+            <li>Additional settings enabled, when scans are enabled.</li>
+            <li>If only one directional scan in X or Y direction is needed, set measurement to a surface scan and leave the other step size to 0.</li>
+            <li>Number of events: Number of events gathered in one measurement.</li>
+            <li>Time stamp: Date and time of measurement that is written to the header of the output file.</li>
+	    <li>Save to file: Selecting of output file filename. For scans, sequential numbers are appended to the end of the selected filename (i.e. <tt>/path/to/test.root</tt> will in a scan have <tt>/path/to/test_001.root</tt>, <tt>/path/to/test_002.root</tt>,...).</li>
+            <li>Start acquisition: Starts the measurement based on currently selected settings.</li>
+            <li>Current measurement progress bar: Determines the status of the current measurement.</li>
+         </ul>
+      </ol><br/>
+
+      <li>Analysis tab:</li>
+      <ol type="a">
+         <li>Histogram file selection:</li>
+	 <ul>
+  	    <li>Open past measurements for analysis. Additional display of header information for quicker reference.</li>
+	    <li>If using multiple files for the analysis, use multiple file select or select all listed files. They will be used in order displayed on the list.</li>
+	    <li>Use the Clear list button to clear all entries in from the list.</li>
+	    <li>Use the edit header button to update any information inside the headers of entries selected on the list.</li>
+         </ul>
+         <li>Histogram: Displays the currently selected histogram from the histogram file selection subwindow.</li>
+	 <li>Histogram controls:</li>
+	 <ul>
+	    <li>Enables plotting options for the currently selected histogram and to setup spectral options for analysis.</li>
+	    <li>ADC range: Sets the range of the ADC spectrum. Ranges are automatic, when set to (0,0).</li>
+	    <li>TDC range: Sets the range of the TDC spectrum. TDC spectrum determines the events used for plotting the ADC spectrum.</li>
+	    <li>Y range: Sets the range of the Y axis on the spectrum. Ranges are automatic, when set to (0,0).</li>
+	    <li>Display channel: Selects the channel to plot, when opening a multichannel measurement file.</li>
+	    <li>Plot type buttons: Buttons to change between ADC, TDC or ADC/TDC type of plot.</li>
+	    <li>Logarithmic scale ON/OFF: Toggle for logarithmic Y axis scale.</li>
+	    <li>Clean plots ON/OFF: Toggle for hiding plot information or not (such as plot title, fitting information, statistics information).</li>
+	    <li>Export: Exports the currently selected histograms (ADC, TDC or ADC/TDC form selected files) into the .pdf format.</li>
+	    <li>Edit: UNDER DEVELOPMENT! Opens the currently visible plot in the Histogram subwindow in a new tab to enable editing.</li>
+         </ul>
+         <li>Analysis:</li>
+	    <li>Options for specific analysis types (integrate spectrum, relative PDE, breakdown voltage, surface scan, timing). When using Start button, analysis starts, saves results and quits. When using Start and edit button, analysis starts and gives options to further edit the results.</li>
+	    <li>General fit settings (Peak sigma, S/N ratio, background interpolation, ADC spectrum offset, Maximum acceptable peak fit error, pedestal lower limit, background subtraction, export fits). Settings for analysis based on fitting of peaks on the ADC spectra (breakdown voltage and relative PDE). The current progress of the analysis is displayed on the progress bar.</li>
+      </ol><br/>
+
+      <li>Monitoring tab: UNDER DEVELOPMENT! Fieldpoint temperature sensor data view.</li><br/>
+      <li>Help tab: Displays the contents of this help file.</li><br/>
+   </ol>
+
+   <p>On the top, there are 3 menus:</p>
+   <ol>
+      <li>File:</li>
+      <ul>
+         <li>Set user layout: Set a user saved layout of the program subwindows or use the default.</li>
+	 <li>Save current layout: Save the program subwindow layout to be used later. This will remember the sizes of each subwindow (Settings pane, Main measurement window, Display, Histogram file selection,...) and the overall size of the program window.</li>
+	 <li>Save current measurement settings: UNDER DEVELOPMENT! Will evantually save the entered values from the Measurement tab.</li>
+	 <li>Save current analysis settings: UNDER DEVELOPMENT! Will eventually save the entered values from the Analysis tab.</li>
+	 <li>Exit: Exit the software (shortkey x)</li>
+      </ul>
+      <li>Analysis (each takes you to the appropriate options for the analysis):</li>
+      <ul>
+         <li>Histogram type: Change between histogram types (same as in histogram controls window).</li>
+	 <li>Fit spectrum: UNDER DEVELOPMENT! Will produce a fit of ADC spectrum peak structure of the current file/files.</li>
+	 <li>Integrate spectrum: Integrate the ADC spectrum of the current file/files inside the selected ADC range.</li>
+	 <li>Integrate spectrum (X direction): Same as Integrate spectrum, but the selected files were produced as X axis scans. Makes the determination of an X directional edge scan and produces a 2D plot if Z axis scan was also enabled.</li>
+	 <li>Integrate spectrum (Y direction): Same as Integrate spectrum (X direction), but the selected files were produced as Y axis scans.</li>
+	 <li>Relative PDE: Produce a relative PDE plot, where selected files were produced as incidence angle scans.</li>
+	 <li>Surface 2D scan: Produce an integral of the ADC spectrum, where selected files were produced as surface scans (in X and Y directions).</li>
+	 <li>Timing analysis: UNDER DEVELOPMENT! Will make an analysis on the TDC spectrum of measurements.</li>
+      </ul>
+
+      <li>Help information</li>
+   </ol>
+
+   <p><span>Important!</span> When using any analysis method, only events inside the selected TDC window will be used (set the TDC range accordingly).</p>
+
+   <h3 id="featold">3b. Old program version (trunk_v0.9)</h3>
+   <p>The main window is divided into 5 subwindows:</p>
+   <ol>
+      <li>Settings window:</li>
+      <ul>
+         <li>ON/OFF switches for voltage and surface scans</li>
+	 <li>a voltage limiter: sets the maximum output voltage for safety reasons</li>
+	 <li>clean plots toggle switch: when ON, no additional stats will be displayed on plots/histograms</li>
+	 <li>scope IP: sets the oscilloscope IP address</li>
+	 <li>LASER settings info panel: this will be written to the output file and is used for supplying additional information</li>
+	 <li>chamber temperature: the chamber temperature to be written to the output file</li>
+	 <li>incidence angle: the angle at which the sample is rotated around its axis, relative to the LASER beam (0 degrees is perpendicular to LASER beam)</li>
+      </ul></br>
+
+      <li>Main measurement window:</li>
+      <ul>
+         <li>settings for table position and bias voltage</li>
+	 <li>when scans are enabled, additional settings for scans</li>
+	 <li>number of events: setting for the number of events to gather in a measurement</li>
+	 <li>time stamp: informational time (start time of measurement is written to output file)</li>
+	 <li>file selector (for scans, the filenames will be appended sequential numbers to distinguish them)</li>
+	 <li>start acquisition button: starts the measurement based on selected settings</li>
+	 <li>waveform analysis settings (channel, measurement type)</li>
+	 <li>possibility to send custom one-line commands</li>
+      </ul><br/>
+
+      <li>Histogram file selection window:</li>
+      <ul>
+         <li>open past measurements for analysis</li>
+	 <li>if using multiple files, use multiple file select or select all listed files</li>
+	 <li>files will be used in order displayed on the list</li>
+	 <li>to clear the complete list, use the clear list button</li>
+	 <li>to edit the header information of currently selected files, use the edit header button</li>
+	 <li>any opened measurement has an info display of its header at the bottom for easier navigation</li>
+      </ul><br/>
+      <li>Histogram window: displays the currently selected histogram in the histogram file selection window</li><br/>
+
+      <li>Histogram controls window:</li>
+      <ul>
+         <li>directly linked to the histogram window, it enables plotting options</li>
+	 <li>can set ranges on histogram plots</li>
+	 <li>can change between different histogram types (ADC, TDC, ADC vs. TDC, 2D surface plot)</li>
+	 <li>for the 2D surface plot, the relevant files need to be selected in the histogram file selection window</li>
+	 <li>toggle for logarithmic Y scale</li>
+	 <li>the currently selected histogram can be manually exported with the export button</li>
+	 <li>fit settings used when running "Fit spectrum" and "Fit all selected" options in the Analysis menu</li>
+      </ul><br/>
+   </ol>
+
+   <p>On the top, there are 4 menus:</p>
+   <ol>
+      <li>File:</li>
+      <ul>
+         <li>New Measurement: not working</li>
+	 <li>Exit: exit the software (shortkey x)</li>
+      </ul>
+
+      <li>Analysis:</li>
+      <ul>
+         <li>Histogram type: change between histogram types (same as in histogram controls window)</li>
+	 <li>Fit spectrum: fit the currently open spectrum for peaks</li>
+	 <li>Fit all selected: fit all the selected ADC spectra selected in the histogram file selection window for peaks and display the breakdown voltage plots</li>
+	 <li>Integrate spectrum (X, Y): integrate the ADC spectrum for multiple files with an X or Y scan (used for edge scans)</li>
+	 <li>Relative PDE: calculation of the relative PDE for the currently selected files</li>
+      </ul>
+
+      <li>Tools:</li>
+      <ul>
+         <li>Fieldpoint temperature sensor: direct graphing of the fieldpoint temperature sensor (with settings for fieldpoint channel, start time and end time), output is a graph (if exporting) and a comma separated list saved to folder <tt>./fieldpoint</tt>. Updating the graph can cause unstable behavior. If possible, use <tt>~/sipmscan/fieldpoint_standalone</tt> instead.</li>
+      </ul>
+
+      <li>Windows:</li>
+      <ul>
+         <li>Specific window tiling</li>
+         <li>Switch between active windows</li>
+      </ul>
+
+      <li>Help information</li>
+   </ol>
+
+   <p><span>Important!</span> When using any analysis method (surface 2D plot, fitting, integration, ADC spectra display) only events inside the selected TDC window will be used so set the TDC range accordingly.</p>
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="prepmeasure">4. Preparing for measurements</h2>
+   <p>General information for preparing the experimental setup and software for measurements.</p>
+
+   <h3 id="presoft">4a. Pre-software checks</h3>
+   <p>Before running the Online version of the program, make sure that CAMAC (Computer Automated Measurement And Control) is turned on and is connected to the computer via a USB cable. If upon starting, the program gives the following message:</p>
+   <div class="codeback"><pre><code>daq::connect() - No devices were detected!</code></pre></div>
+   <p>then CAMAC was not started or the program did not properly register it.</p>
+   <p>In addition, for the Online version of the program, make sure that all movement table controllers are turned on and are connected to the computer via a USB cable.</p>
+   <p>For the connection with the oscilloscope (Online and Offline with scope control versions of the program), make sure it is connected to the same network with a UTP cable and that the VXI software is started on it.</p>
+
+   <h3 id="exppremeasure">4b. Experimental setup pre-measurement checks</h3>
+   <p>When making changes inside the setup, make sure that no cables are hindering the movement of any of the movement tables. For the X, Y and Z axis table, the most critical are motor control cables (white, flat, multiwire cables) and the optical cable for laser optics (yellow or orange optical fibre). For the rotation table, the most critical are voltage supply cable (marked with BIAS) and signal cables (the same as bias cable, but unmarked or marked with SIGNAL).</p>
+   <p>Additionally, whenever putting the experimental setup back together, note the distance between the laser optics and the sample. The sample should be placed out of harms way from the collimator of the optics (check it by setting Z axis position to 0).</p>
+
+   <h3 id="softpremeasure">4c. Software pre-measurement checks</h3>
+   <p>Before starting any measurement, it is suggested to set the Voltage limit (Settings pane, Measurement tab) in order to avoid any unwanted mistakes in bias voltage settings (to avoid any irreparable damage to the sample). Also, make sure to note the output channel for bias voltage supply and not change any other channels (since they could be connected to other experimental setups).</p>
+
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="measures">5. Measurements</h2>
+   <p>Information on the settings for performing measurements available in this program and information on the movement tables.</p>
+
+   <h3 id="meassettings">5a. Measurement settings</h3>
+   <p>On the Settings pane in the Measurement tab, the type of measurement can be selected:</p>
+   <ul>
+      <li>None is checked: The program will perform a single measurement (useful for quickly determining the state of the setup).</li><br/>
+      <li>Voltage scan is checked: The program will enable <tt>V(min)</tt>, <tt>V(max)</tt> and <tt>V(step)</tt> settings and perform multiple measurements at different bias voltages. The number of measurements is equal to:
+      <div class="codeback"><pre><code>Floor( [V(max) - V(min)]/V(step) )</code></pre></div>
+      The last measurement is at a voltage always lower or equal to <tt>V(max)</tt> for safety reasons. Whenever <tt>V(step)</tt> is 0, only one measurement will be performed at <tt>V(min).</tt></li><br/>
+      <li>Surface scan is checked: The program will enable <tt>X(min)</tt>, <tt>X(max)</tt> and <tt>X(step)</tt>, and <tt>Y(min)</tt>, <tt>Y(max)</tt> and <tt>Y(step)</tt> settings and perform multiple measurements at different table positions (surface scan). The number of measurements is equal to:
+      <div class="codeback"><pre><code>Floor( [X(max) - X(min)]/X(step) )
+Floor( [Y(max) - Y(min)]/Y(step) )</code></pre></div>
+      The last measurement is at a position always smaller or equal to <tt>X(max)</tt> or <tt>Y(max)</tt>. Whenever <tt>X(step)</tt> is 0, only one measurement will be performed at <tt>X(min)</tt> and equally in the Y axis direction. By setting one axis step size to 0, only scans along one axis are performed (for example for edge scans).</li><br/>
+      <li>Z-axis scan is checked: The program will enable <tt>Z(min)</tt>, <tt>Z(max)</tt> and <tt>Z(step)</tt> settings and perform multiple measurements at different distances between laser optics and the sample (Z axis). The number of measurements is equal to:
+      <div class="codeback"><pre><code>Floor( [Z(max) - Z(min)]/Z(step) )</code></pre></div>
+      The last measurement is at a position always smaller or equal to <tt>Z(max)</tt>. Whenever <tt>Z(step)</tt> is 0, only one measurement will be performed at <tt>Z(min)</tt>.</li><br/>
+      <li>Rotation scan is checked: The program will enable <tt>Angle(min)</tt>, <tt>Angle(max)</tt> and <tt>Angle(step)</tt> settings and perform multiple measurements at different incidence angles (angle away from perpendicular incidence of laser light on the sample). The number of measurements is equal to:
+      <div class="codeback"><pre><code>Floor( [Angle(max) - Angle(min)]/Angle(step) )</code></pre></div>
+      The last measurement is at an angle always smaller or equal to <tt>Angle(max)</tt>. Whenever <tt>Angle(step)</tt> is 0, only one measurement will be performed at <tt>Angle(min)</tt>.</li>
+  </ul>
+
+  <p>Surface scan and Z axis scan can be combined to perform edge scans at different distances between optics and sample (useful for finding the focal point of the laser).</p>
+
+   <h3 id="tempchamber">5b. Temperature chamber considerations</h3>
+   <p>Whenever using the temperature chamber, be careful about the set temperature. SiPM samples have a specific operational and storage temperatures that should not be exceeded. The temperature chamber, however, has slight overshoots when increasing the temperature, thus heating slightly above the set temperature (sometimes as much as 5 degrees) and then cooling back down.</p>
+   <p>The chamber also has some problems cooling after previous heating (ex. coming from 0 degrees to 25 degrees and then again cooling the chamber). In this case, it will seem to remain around some temperature, although it is supposed to be cooling down. Sometimes this can be solved by turning off the chamber and waiting for some time or by making a large temperature jump from higher to lower temperature (taking into consideration the sample temperature range).</p>
+   <p>Opening the chamber after measurements at low temperatures should be very short, since condensation forms very quickly that can then lead to the water droplets freezing at low temperatures. Ideally, the chamber should be warmed close to room temperature before opening, but any very short changes to the setup can still be performed when at lower temperatures.</p>
+
+   <h3 id="movement">5c. Movement table</h3>
+   <p>The movement tables are controlled by National Aperture MicroMini controllers through a subprogram found in <tt>$sipmscan/trunk/src/MIKRO</tt>. Sometimes special measures are needed (in case of problems) that are not available inside the sipmscan software, but can be achieved by going directly to the subprogram. The subprogram can be run, by going directly to its directory and running:</p>
+   <div class="codeback"><pre><code>./mikro_ctrl [arguments]</code></pre></div>
+   <p>The arguments can be (only running <tt>./mikro_ctrl</tt> will bring up help information):</p>
+   <ul>
+      <li>Node select: <tt>-n [node nr]</tt>. The <tt>[nodenr]</tt> is the address number of the controller as set on the front of the MicroMini controller.</li>
+      <li>Initialize node: <tt>-i [init type]</tt>. The <tt>[inittype]</tt> is the initialization type that can be 3M Linear (1), 3M Rotational (2), 4M Linear (3) or 4M Rotational (4). 3M are the smaller/shorter versions, while 4M are the larger/longer versions (all three axis are 4M Linear and the angle is 3M Rotational). Always needs the node select argument (<tt>-n</tt>).</li>
+      <li>Node homing: <tt>-h</tt>. Sets the node to a predetermined 0 value (home). Always needs the node select argument (<tt>-n</tt>). <span>IMPORTANT:</span> The rotational table must never be set to home! It does not have a predetemined zero, so the table will infinitely spin and can cause harm to the sample or attached cables.</li>
+      <li>Reset node: <tt>-r</tt>. Does a complete reset of the controller. Always needs the node select argument (<tt>-n</tt>). After reset, the controller needs to be initialized in order to work properly.</li>
+      <li>Node status: <tt>-a</tt>. Returns the current status of the controller. Can be used with node select argument (<tt>-n</tt>) to target specific controller or without to display status from all.</li>
+      <li>Node position: <tt>-p</tt>. Returns the current position of the controller. Always needs the node select argument (<tt>-n</tt>).</li>
+      <li>Node get command: <tt>-g [command]</tt>. Get return value from the issued command. Always needs the node select argument (<tt>-n</tt>). For possible commands, see the MicroMini user manual.</li>
+      <li>Node set command: <tt>-v [value] -s [command]</tt>. Set a value with an issued command. Always needs the node select argument (<tt>-n</tt>). For possible commands and values, see the MicroMini user manual.</li>
+      <li>Custom node command: <tt>-c [command]</tt>. Run one of the node commands without setting a value. Always needs the node select argument (<tt>-n</tt>). For possible commands and values, see the MicroMini user manual.</li>
+   </ul>
+
+   <p>Example commands:</p>
+   <ul>
+      <li>Reset node 1:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 1 -r</code></pre></div>
+      <li>Initialize node 2 as a 4M Linear type:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 2 -i 3</code></pre></div>
+      <li>Home node 3:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 3 -h</code></pre></div>
+      <li>Determine node 1 position:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 1 -p</code></pre></div>
+      <li>Prepare to move node 2 to an absolute position of 1000 and move it:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 2 -v 500 -s la
+./mikro_ctrl -c m</code></pre></div>
+      <li>Prepare to move node 3 relative to current position for -500 and move it:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 2 -v -500 -s lr
+./mikro_ctrl -c m</code></pre></div>
+      <li>Abort the current movement of node 4:</li>
+      <div class="codeback"><pre><code>./mikro_ctrl -n 4 -c ab</code></pre></div>
+  </ul>
+
+  <p>Documentation:</p>
+  <ul>
+     <li><a href="http://www-f9.ijs.si/~rok/detectors/oprema/national_aperture_stages/MicroMini_Manual.pdf" target="_blank">MicroMini controller manual</a></li>
+     <li><a href="http://www.naimotion.com/mm4mex.htm" target="_blank">4M Linear table information</a></li>
+     <li><a href="http://www.naimotion.com/mm3mr.htm" target="_blank">3M Rotational table information</a></li>
+  </ul>
+
+   <h3 id="biasvolt">5d. Bias voltage supply</h3>
+   <p>The bias voltage is supplied by the MPOD HV & LV power supply system through a subscript found in <tt>$sipmscan/trunk/src/mpod</tt> (using the snmp software). Sometimes special measures are needed (in case of problems) that are not available inside the sipmscan software, but can be achieved by going directly to the subprogram. The subprogram can be run, by going directly to its directory and running:</p>
+   <div class="codeback"><pre><code>./mpod_voltage.sh [arguments]</code></pre></div>
+   <p>The arguments can be:</p>
+   <ul>
+      <li>Reset all output channels: <tt>--resetall</tt></li>
+      <li>Reset a selected output channel: <tt>-r [channel]</tt></li>
+      <li>Selects an output channel: <tt>-o [channel]</tt></li>
+      <li>Sets the output channel voltage: <tt>-v [voltage]</tt></li>
+      <li>Turns the output on/off: <tt>-s [0/1]</tt></li>
+      <li>Get the current output channel voltage: <tt>-g</tt></li>
+   </ul>
+
+   <p>Example commands:</p>
+   <ul>
+      <li>Get the set bias voltage on channel 1 (U0):</li>
+      <div class="codeback"><pre><code>./mpod_voltage.sh -o 1 -g</code></pre></div>
+      <li>Turn the bias voltage off on channel 2 (U1):</li>
+      <div class="codeback"><pre><code>./mpod_voltage.sh -o 2 -s 0</code></pre></div>
+      <li>Turn the bias voltage on and set it to 24.5V on channel 1 (U0):</li>
+      <div class="codeback"><pre><code>./mpod_voltage.sh -o 1 -v 24.5 -s 1</code></pre></div>
+      <li>Reset channel 2 (U1):</li>
+      <div class="codeback"><pre><code>./mpod_voltage.sh -o 2 -r</code></pre></div>
+   </ul>
+
+   <p>In its complete state, the command used in the script mpod_voltage.sh for setting for example an output voltage of 24.5 to channel 1 (U0):</p>
+   <div class="codeback"><pre><code>snmpset -v 2c -M +. -m +WIENER-CRATE-MIB -c guru [IP address] outputVoltage.1 F 24.5</code></pre></div>
+
+  <p>Documentation:</p>
+  <ul>
+     <li><a href="http://www.net-snmp.org/docs/man/" target="_blank">Net-SNMP</a></li>
+     <li><a href="http://file.wiener-d.com/documentation/MPOD/Manual_MPOD_LV-HV_2.9.pdf" target="_blank">MPOD documentation</a></li>
+  </ul>
+
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="measfiles">6. Measurement files</h2>
+   <p>The measurement files, used for saving results, are constructed in native ROOT format to increase the read/write speeds while reading and saving data.</p>
+
+   <h3 id="rootfile">6a. ROOT file structure</h3>
+   <p>The output ROOT files are structured in this way:</p>
+   <div class="codeback"><div class="codename">ROOT file structure</div>
+   <pre><code>ROOT file (TFile)
+ |
+ |== header_data (TTree): Header information (same for all events)
+ |    |
+ |    |== nrch (TBranch): Number of channels (ADC + TDC channels)
+ |    |== timestamp (TBranch): Unix timestamp for start of measurement
+ |    |== biasvolt (TBranch): Measurement bias voltage
+ |    |== xpos (TBranch): X axis position in table units
+ |    |== ypos (TBranch): Y axis position in table units
+ |    |== zpos (TBranch): Z axis position in table units
+ |    |== temperature (TBranch): Chamber temperature
+ |    |== angle (TBranch): Incidence angle of measurement
+ |    |== laserinfo (TBranch): Additional info for measurement
+ |
+ |== meas_data (TTree): Measured values from ADC and TDC (all events)
+ |    |
+ |    |== ADC0 (TBranch): All events from ADC channel 0 saved in order
+ |    |== TDC0 (TBranch): All events from TDC channel 0 saved in order
+ |    |== ADC1 (TBranch): All events from ADC channel 1 saved in order
+ |    |== TDC1 (TBranch): All events from TDC channel 1 saved in order
+ |    |== ... (TBranch): Additional channels up to 8 (0-7) in total
+ |
+ |== scope_data (TTree, optional): Measured values from the oscilloscope
+      |
+      |== measdata (TBranch): Currently in development
+   </code></pre></div>
+
+   <p>The easiest way to get the data is to create structures:</p>
+   <div class="codeback"><div class="codename">Output file structure</div>
+   <pre><code>struct EventHeader {
+  int nrch;
+  int timestamp;
+  double biasvolt;
+  int xpos;
+  int ypos;
+  int zpos;
+  double temperature;
+  double angle;
+  char laserinfo[256];
+} evtheader;
+
+struct EventData {
+  int adcdata[8];
+  int tdcdata[8];
+} evtdata;
+
+struct EventMeas {
+  double measdata;
+} evtmeas;
+   </code></pre></div>
+
+   <p>Then opening the file:</p>
+   <div class="codeback"><pre><code>TFile* inputfile = TFile::Open("filename.root","READ");</code></pre></div>
+
+   <p>And getting separate information:</p>
+   <ul>
+      <li>for instance for reading the bias voltage from header:</li>
+      <div class="codeback"><pre><code>TTree* sometree;
+inputfile->GetObject("header_data", sometree);
+sometree->SetBranchAddress("biasvolt", &evtheader.biasvolt);
+sometree->GetEntry(0);</code></pre></div>
+
+      <li>for instance for reading all ADC and TDC events in a file from channel 1 (ADC0):</li>
+      <div class="codeback"><pre><code>TTree* sometree;
+inputfile->GetObject("meas_data", sometree);
+char selectedCh[256];
+for(int i = 0; i < sometree->GetEntries(); i++)
+{
+  sprintf(selectedCh, "ADC%d", 0);
+  sometree->SetBranchAddress(selectedCh, &evtdata.adcdata[i]);
+  sometree->GetEntry(i);
+
+  sprintf(selectedCh, "TDC%d", 0);
+  sometree->SetBranchAddress(selectedCh, &evtdata.tdcdata[i]);
+  sometree->GetEntry(i);
+}</code></pre></div>
+   </ul>
+
+   <h3 id="fileopen">6b. Opening measurement files</h3>
+   <p>The sipmscan software has internal handling for saving and opening measurement files. To open these files for an analysis, use the File selection button in the Histogram file selection window (Analysis tab). Once the file or files are opened, it is possible to double click a file on the list to display its histogram. The histogram can then be manipulated by changing ADC or TDC ranges, or changing the type of displayed histogram (ADC, TDC ADC versus TDC).</p>
+   <p>Each of the selected files has a display of its header below the file list in order to quickly determine at what conditions and when this measurement was taken. If there are any problems with the header, modifications can be performed with the Edit header button.</p>
+   <p>After that analysis on the measurements can be performed, based on the selected ranges for ADC and TDC (note that each measured event has a ADC and TDC channel value saved to the file).</p>
+
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="analysis">7. Analysis</h2>
+   <p>The sipmscan software already includes a number of analysis options:</p>
+   <ul>
+      <li>Plotting ADC (Analog-to-Digital Converter) spectrum, TDC (Time-to-Digital Converter) spectrum and ADC versus TDC 2D plots.</li>
+      <li>Fitting of ADC spectrum photon equivalent peaks.</li>
+      <li>ADC spectrum integration: Single or along X or Y directions (for edge scans).</li>
+      <li>Relative Photon Detection Efficiency: Efficiency of sample relative to incidence angle.</li>
+      <li>Breakdown voltage: Determination of silicon detector breakdown voltage through ADC spectrum photon peak separation (gain).</li>
+      <li>Surface scan: Production of a 2D plot by integrating the ADC spectrum in each laser position.</li>
+   </ul>
+   <p>Still to come...</p>
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+   <h2 id="changelog">8. Change log</h2>
+   <p>5.10.2016 (Current Rev):</p>
+   <ol type="a">
+      <li>Fixed a couple of bugs and layout positions.</li>
+      <li>Added settings files for measurement and analysis settings. With this, everytime a new measurement or a new analysis is ran, the selected settings are saved to a file. This way, if the program crashes, all settings will be automatically filled in.</li>
+   </ol><br/>
+
+   <p>30.9.2016 (Rev 172):</p>
+   <ol type="a">
+      <li>Fixed the time estimation for surface and Z-axis scans (TimeEstimateNew).</li>
+      <li>Did the same as c) in the previous revision, but separately for opening histogram files and for selecting the measurement output file.</li>
+      <li>Added an Emergency stop button to the movement of the table - just in case a wrong value is inserted and there is something in the way.</li>
+      <li>Added a way to integrate the surface scan, when using the "Start and Edit" option. This can be useful for determining the angular dependence of the light passing onto a complete camera pixel.</li>
+   </ol><br/>
+
+   <p>11.8.2016 (Rev 167):</p>
+   <ol type="a">
+      <li>When using breakdown voltage or relative PDE analysis and with only one file selected, the analysis is stopped and the fit is displayed on the graph. This makes it easier to setup fitting settings.</li>
+      <li>Added the possibility to export plots created through analysis ("Start and edit" option).</li>
+      <li>Everytime, when opening a histogram file, the following open and save dialog windows automatically open up in that directory. This makes it easier to find the directory that was used last.</li>
+      <li>Added a dropdown list to the Analysis tab, so that it is possible to set position units for plots (table units or microns).</li>
+      <li>Normalization to a maximum of 1 now works for surface scans.</li>
+   </ol><br/>
+
+   <p>4.4.2016 (Rev 146):</p>
+   <ol type="a">
+      <li>Complete restructure of the program, so that it now runs seperately, not through ROOT (libraries are constructed pre-run). Program is now split into multiple tabs for easier use, three of which are Measurement, Analysis and Help.</li>
+      <li>Added support for relative PDE measurements with included sample rotation table.</li>
+      <li>Improvement of analysis part of the program (includes ADC spectrum integration, breakdown voltage characterization, surface scans, relative PDE characterization,...).</li>
+      <li>Added tooltips for different parts of the program for quick reference. Use them by hovering over any text entries, number entries, check boxes or buttons.</li>
+      <li>Connection to temperature data and oscilloscope currently under development.</li>
+      <li>Older version of program moved to <a href="https://f9pc00.ijs.si/svn/f9daq/lab/sipmscan/trunk_v0.9">https://f9pc00.ijs.si/svn/f9daq/lab/sipmscan/trunk_v0.9</a> and will no longer be in development.</li>
+   </ol><br/>
+
+   <p>17.7.2015 (Rev 129):</p>
+   <ol type="a">
+      <li>Fixed a problem with ADC peak fitting (peak fitting returning a segmentation fault).</li>
+      <li>Added support to edit file headers (in case, some were created at an older date and did not include some header information or there was a mistake in writing them).</li>
+      <li>Temperature data can only be retrieved when connected to the IJS network (IP = 178.172.43.xxx) and is disabled otherwise.</li>
+      <li>The relative PDE measurement now takes the incidence angle value directly from input files.</li>
+      <li>Currently, data acquisition only works on 32bit computers.</li>
+      <li>Fixed issue with program not correctly writting multiple channels.</li>
+   </ol><br/>
+
+   <p>5.5.2015 (Rev 128):</p>
+   <ol type="a">
+      <li>Added a header display for opened files in the histogram file selection window. This enables a quicker view of the measurement information.</li>
+      <li>Added an incidence angle input to be able to save sample rotation angle to headers of files.</li>
+      <li>Added support for the fieldpoint temperature sensor (FP RTD 122). Can now plot and export data from the sensor for a specific channel and specific time range. For now, this option only works if the PC you are using this program on is connected to an internet/ethernet connection at IJS.</li>
+      <li>Added a limited relative PDE analysis option. At this time, it takes the selected files and calculates the PDE, relative to the first selected file. The first file should be measured at incidence angle 0, with others having an incidence angle shift of +15 (1st file -> 0, 2nd file -> 15, 3rd file -> 30,...).</li>
+   </ol><br/>
+
+   <p>9.4.2015 (Rev 127):</p>
+   <ol type="a">
+      <li>Added communications panel for connecting to a Tektronix scope.</li>
+      <li>Added limited support for waveform analysis with a Tektronix scope. For now, it only works when linking it to CAMAC acquisition.</li>
+      <li>Added a manual chamber temperature entry field.</li>
+   </ol><br/>
+
+   <p>16.3.2015 (Rev 117):</p>
+   <ol type="a">
+      <li>First version of sipmscan.</li>
+      <li>Added support for CAMAC, bias voltage settings and table position settings.</li>
+      <li>Added support for opening measured histograms.</li>
+      <li>Added support for analysis:</li>
+      <ul>
+         <li>making surface plots</li>
+	 <li>fitting the ADC spectrum</li>
+	 <li>creating breakdown voltage plots</li>
+	 <li>integrating the ADC spectrum with changing X or Y direction (edge scans)</li>
+      </ul>
+   </ol><br/>
+
+   <div class="backtop"><a href="#top">Back to top</a></div>
+
+</div>
+
+</body>
+</html>

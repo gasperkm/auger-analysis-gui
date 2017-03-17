@@ -1,0 +1,35 @@
+# Default layout file: 
+# - comment lines start with #
+# - each frame layout is separated by a comment
+# - any blank lines are skipped
+# - the splitted subwindows are regarded as follows:
+#   > when major split is horizontal, start on left side (top to bottom) and move towards right
+#   > when major split is vertical, start from top (left to right) and move to the bottom
+
+# Whole window width and height
+1240	800	main
+
+# ADST viewer subwindows width and height
+626	741	settings
+606	506	histogram
+606	235	histctrl
+
+# MVA subwindows width and height
+826	741	rewrite
+826	261	options
+406	400	mvaanal
+
+# Cuts subwindows width and height
+406	741	options
+826	741	cutswin
+
+# Measurement subwindows width and height
+#248	480	settings
+#248	261	display
+#984	745	mainmeasure
+
+# Analysis subwindows width and height
+#826	480	histfile
+#826	261	analysis
+#406	400	histogram
+#406	341	histctrl

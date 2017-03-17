@@ -1,0 +1,109 @@
+# Makefile tutorial: https://www.gnu.org/software/make/manual/html_node/index.html#SEC_Contents
+ 
+# Make variables ----------------------------------------------------
+
+# ROOT include and libraries
+ROOTINC=$(shell root-config --incdir)
+ROOTLIB=$(shell root-config --libs)
+GRROOTLIB=$(shell root-config --cflags --glibs)
+
+# Source and debug directories
+SRC=./src
+DBG=./dbg
+IDIR=./include
+BIN=./bin
+DICT=./dict
+LDIR=./lib
+
+# Includes and libraries, libraries
+#INC=-I. -I$(ROOTINC) -I$(AUGEROFFLINEROOT)/include/adst
+INC=-I. -I$(ROOTINC) -I$(ADSTROOT)/include/adst
+LIBS=$(ROOTLIB) -L. -lm
+
+# Compiler options
+#COMPOPT=-fPIC -g -Wno-unused-value -std=c++11
+COMPOPT=-fPIC -g -std=c++11
+
+# Specific variables for the main program
+TARGETOLD=auger-analysis-gui-old
+TARGETNEW=auger-analysis-gui-new
+FILES=$(shell find $(SRC)/ -name "*.cpp")
+HEADER=$(IDIR)/daq.h $(IDIR)/workstation.h $(IDIR)/sipmscan.h $(IDIR)/root_include.h
+#OFFLINELIBS=-lRecEventKG -lAnalysisKG -lAugerEventIO -lAugerFramework -lAugerModules -lAugerTools -lAugerUtilities -lTMVA
+OFFLINELIBS=-lRecEventKG -lAnalysisKG -lTMVA -lMinuit
+#CAMLIB = $(LIBFILE)
+#SHLIB = $(LIBFILE) $(LDIR)/libvxi11.a
+
+# -------------------------------------------------------------------
+
+# Base rules --------------------------------------------------------
+
+# Make the main program and libraries
+#all: $(TARGETOLD) 
+library: $(LDIR)/libsubstr.so
+
+# Rules for making the main program (old version)
+$(TARGETOLD): $(FILES) $(LDIR)/libsubstr.so tmvagui
+	@echo "\n# Generating dictionary GuiDictOld.C ---------------------------"
+#	rootcint -f $(DICT)/GuiDictOld.C -c -p $(INC) $(CPPFLAGS) $(IDIR)/auger-analysis-gui.h $(IDIR)/OfflineIncludeOld.h $(DICT)/GuiLinkDef.h
+	rootcint -f $(DICT)/GuiDictOld.C -c -p $(INC) $(CPPFLAGS) $(IDIR)/auger-analysis-gui.h $(DICT)/GuiLinkDef.h
+#	@echo "\n# Checking to see if bin directory already exists -----------"
+	if [ ! -d "$(BIN)" ];then  mkdir $(BIN);  fi
+	@echo "\n# Compiling main program ------------------------------------"
+#	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(AUGEROFFLINEROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	@echo "\n# Compilation successful ------------------------------------"
+	@echo "# Use ./start.sh old to run the program -------------------------"
+
+# Rules for making the main program (old version)
+$(TARGETNEW): $(FILES) $(LDIR)/libsubstr.so tmvagui
+	@echo "\n# Generating dictionary GuiDictNew.C ---------------------------"
+#	rootcint -f $(DICT)/GuiDictNew.C -c -p $(INC) $(CPPFLAGS) $(IDIR)/auger-analysis-gui.h $(IDIR)/OfflineIncludeNew.h $(DICT)/GuiLinkDef.h
+	rootcint -f $(DICT)/GuiDictNew.C -c -p $(INC) $(CPPFLAGS) $(IDIR)/auger-analysis-gui.h $(DICT)/GuiLinkDef.h
+#	@echo "\n# Checking to see if bin directory already exists -----------"
+	if [ ! -d "$(BIN)" ];then  mkdir $(BIN);  fi
+	@echo "\n# Compiling main program ------------------------------------"
+#	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(AUGEROFFLINEROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	@echo "\n# Compilation successful ------------------------------------"
+	@echo "# Use ./start.sh new to run the program -------------------------"
+# -------------------------------------------------------------------
+
+# Substructue library rules ---------------------------------------------------
+
+# Rules for making user defined libraries
+$(LDIR)/libsubstr.so: $(LDIR)/libsubstr.a
+	@echo "\n# Creating a shared testing library -------------------------"
+	rootcint -f $(DICT)/TestDict.C -c $(INC) $(CPPFLAGS) $(IDIR)/substructure.h $(DICT)/TestLinkDef.h
+	$(CXX) $(CPPFLAGS) $(INC) $(COMPOPT) $(SRC)/substructure.cpp $(DICT)/TestDict.C $(LDIR)/libsubstr.a -shared -o $@
+#	@echo "\n# Checking to see if lib directory already exists -----------"
+	if [ ! -d "$(LDIR)" ];then  mkdir $(LDIR);  fi
+#	mv $@ $^ $(LDIR)/
+
+$(LDIR)/libsubstr.a: $(SRC)/substructure.o
+	@echo "\n# Creating a static testing library -------------------------"
+	ar r $@ $^
+
+$(SRC)/substructure.o: $(SRC)/substructure.cpp $(IDIR)/substructure.h
+	@echo "\n# Compiling separate source files ---------------------------"
+	$(CXX) $(CPPFLAGS) $(INC) -c $(SRC)/substructure.cpp -o $(SRC)/substructure.o
+
+# -------------------------------------------------------------------
+
+# TMVA GUI interface rules ---------------------------------------------------
+tmvagui: $(SRC)/root_mva/TMVAGui.C
+	@echo "\n# Creating the TMVA GUI interface -------------------------"
+	$(CXX) -I$(ROOTINC) -I. $< -o ./bin/tmvagui $(ROOTLIB)
+	
+# -------------------------------------------------------------------
+
+# Cleaning rules ----------------------------------------------------
+
+# Rules for cleaning the installation
+clean:
+	@echo "# Cleaning the installation directory -------------------------"
+	rm -fr $(DICT)/*Dict.C $(DICT)/*Dict.h $(BIN) $(LDIR) start.sh *.o $(SRC)/*.o
+	rm -fr $(IDIR)/workstation.h $(SRC)/daqscope.C $(SRC)/daqusb.C $(DBG)/finish_sig.txt
+	rm -fr $(SRC)/root_mva/plotsdir.h $(SRC)/root_mva/plots/* $(SRC)/root_mva/*.d $(SRC)/root_mva/*.so
+
+# -------------------------------------------------------------------

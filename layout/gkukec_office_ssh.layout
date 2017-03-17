@@ -1,0 +1,12 @@
+# Whole window width and height
+1315	893	main
+
+# ADST viewer subwindows width and height
+884	667	adstwindow0
+884	167	adstwindow1
+423	838	adstwindow2
+
+# MVA subwindows width and height
+664	575	mvawindow0
+664	259	mvawindow1
+643	838	mvawindow2

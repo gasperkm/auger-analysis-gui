@@ -1,0 +1,29 @@
+adst cuts version: 1.0
+# Cuts used for the energy calibration of the vertical (<60 degrees) data
+
+#hasMieDatabase
+minLgEnergyFD           1e-20
+skipSaturated
+badFDPeriodRejection
+!badPixels              1
+minMeanPixelRMS         17
+
+maxVAOD                 0.1
+LidarCloudRemoval       25
+MinCloudDepthDistance   { params: -50  50 }
+MaxCloudThickness       100
+
+xMaxObsInExpectedFOV    { params: 40 20 }
+xMaxError               40.0
+energyTotError          0.18
+profileChi2Sigma        2.5 -1.1
+maxDepthHole            20.
+maxCoreTankDist         750
+
+FidFOVICRC13 { params: 40 20 }
+
+# GKM
+minLgEnergyFD{ params:    18.6          # minimum lg(E/eV)
+               nMinusOne: 20 17. 21. }
+maxLgEnergyFD{ params:    18.9          # maximum lg(E/eV)
+               nMinusOne: 20 17. 21. }

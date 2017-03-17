@@ -1,0 +1,390 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "vxi11_user.h"
+#include "../include/daqscope.h"
+#include "../include/workstation.h"
+
+CLINK *clink;
+char *savedIP;
+const char *allChans[8] = {"CH1","CH2","CH3","CH4","MATH1","MATH2","MATH3","MATH4"};
+const char *measType[11] = {"AMP","ARE","DEL","FALL","FREQ","MAX","MEAN","MINI","PK2P","PWI","RIS"};
+char *bbq;
+
+// Query and command functions to simplify analysis --------------
+int vxi11_query(CLINK *clink, const char *mycmd)
+{
+   char buf[WAVE_LEN];
+   memset(buf, 0, WAVE_LEN);
+   vxi11_send(clink, mycmd);
+   int bytes_returned = vxi11_receive(clink, buf, WAVE_LEN);
+   if (bytes_returned > 0)
+   {
+      printf("%s\n", buf);
+   }
+   else if (bytes_returned == -15)
+      printf("*** [ NOTHING RECEIVED ] ***\n");
+
+   return 0;
+}
+
+void vxi11_command(CLINK *clink,char *mycmd)
+{
+   char buf[WAVE_LEN];
+   memset(buf, 0, WAVE_LEN);
+   vxi11_send(clink, mycmd);
+}
+// ---------------------------------------------------------------
+
+// Tektronix unit conversion -------------------------------------
+double daqscope::tekunit(char *prefix)
+{
+   if (strcmp(prefix,"m")==0) return 0.001;
+   else if (strcmp(prefix,"u")==0) return 0.000001;
+   else if (strcmp(prefix,"n")==0) return 0.000000001;
+   else return 1;
+}
+// ---------------------------------------------------------------
+
+// Connect to a scope through IP address IPaddr ------------------
+int daqscope::connect(char *IPaddr)
+{
+   int iTemp;
+   char buf[WAVE_LEN];
+   printf("daqscope::connect(%s)\n", IPaddr);
+   clink = new CLINK;
+   iTemp = vxi11_open_device(IPaddr, clink);
+   if(iTemp == 0)
+   {
+      vxi11_send(clink, "*IDN?");
+      vxi11_receive(clink, buf, WAVE_LEN);
+      printf("Connected to device (%s): %s\n", IPaddr, buf);
+      savedIP = IPaddr;
+      return iTemp;
+   }
+   else
+      return iTemp;
+}
+// ---------------------------------------------------------------
+
+// Disconnect from scope with IP address IPaddr ------------------
+int daqscope::disconnect(char *IPaddr)
+{
+   int iTemp;
+   printf("daqscope::disconnect(%s)\n", IPaddr);
+   iTemp = vxi11_close_device(IPaddr, clink);
+   if(iTemp == 0)
+   {
+      printf("Disconnected from device (%s).\n", IPaddr);
+      delete clink;
+   }
+   return iTemp;
+}
+// ---------------------------------------------------------------
+
+// Initialize the scope for waveform or measurement --------------
+int daqscope::init()
+{
+   int iTemp;
+   char cmd[512];
+   char cTemp[256];
+   printf("daqscope::init()\n");
+
+   printf("Measurement type is: %d\n", scopeUseType);
+
+   // For measurements, only one channel can be used (rise, fall, period,...)
+   if(scopeUseType == 2) scopeChanNr = 1;
+   printf("Nr. of channels selected: %d\n", scopeChanNr);
+
+   // Only use scope if measurement is different than 0
+   if(scopeUseType == 0)
+      return 0;
+   else
+   {
+      // Combine all selected channels into a comma separated string
+      for(int i = 0; i < scopeChanNr; i++)
+      {
+         if(i == scopeChanNr-1)
+         {
+   	    if(i == 0) sprintf(scopeChanstring, "%s", allChans[scopeChans[i]]);
+            else sprintf(cTemp, "%s", allChans[scopeChans[i]]);
+         }
+         else
+         {
+      	    if(i == 0) sprintf(scopeChanstring, "%s,", allChans[scopeChans[i]]);
+            else sprintf(cTemp, "%s,", allChans[scopeChans[i]]);
+         }
+         if(i > 0)
+            strcat(scopeChanstring, cTemp);
+      }
+      printf("Selected channels: %s\n", scopeChanstring);
+
+      // Check scope ID and turn the header display on
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_query(clink, "*IDN?");
+      vxi11_command(clink,(char*)"HEADER ON");
+#else
+      printf("Identify Tek (*IDN?, HEADER ON)\n");
+#endif
+
+      // Set the scope data sources
+      sprintf(cmd, "DATA:SOURCE %s", scopeChanstring);
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_command(clink,cmd);
+#else
+      printf("Set data source (DATA:SOURCE): %s\n", cmd);
+#endif
+
+      // Set to fast acquisition and set encoding
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_command(clink,(char*)"FASTACQ:STATE 0");
+      vxi11_command(clink,(char*)"DATA:ENCDG SRIBINARY");
+      vxi11_command(clink,(char*)"WFMO:BYT_N 2");
+
+      // Set gating (currently not used)
+      vxi11_command(clink,(char*)"GAT OFF");
+#else
+      printf("Set fastacq, encoding and gating (FASTACQ:STATE 0, DATA:ENCDG SRIBINARY, WFMO:BYT_N 2, MEASU:GAT OFF).\n");
+#endif
+
+      // Check scale on each of selected channels (is this even needed?)
+      bbq = strtok(scopeChanstring,",");
+      while(bbq != NULL)
+      {
+         sprintf(cmd,"%s:SCALE?",bbq);
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+         vxi11_query(clink,cmd);
+#else
+         printf("Return the scale of channel: %s\n", cmd);
+#endif
+         bbq = strtok(NULL, ",");
+      }
+
+      // Check waveform and data options/settings
+      char buf[WAVE_LEN];
+      memset(buf, 0, WAVE_LEN);
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_send(clink, "WFMO:WFID?");
+      iTemp = vxi11_receive(clink, buf, WAVE_LEN);
+      printf("Init out (length = %d): %s\n", iTemp, buf);
+#else
+      printf("Get acquisition parameters (WFMOUTPRE:WFID?).\n");
+      sprintf(buf, ":WFMOUTPRE:WFID \"Ch1, DC coupling, 20.0mV/div, 10.0ns/div, 500 points, Sample mode\"");
+      iTemp = strlen(buf);
+#endif
+      if (iTemp == -15)
+         printf("\n*** [ NOTHING RECEIVED ] ***\n");
+      else
+      {
+         bbq = strtok(buf,","); // break WFID out into substrings
+         for (int k = 0; k < 5; k++)
+	 {
+            // info on voltage per division setting
+            if (k == 2)
+	    {
+               memcpy(cTemp, &bbq[1], 5);
+               cTemp[5] = 0;
+               bbq[7] = 0;
+               tekvolt = atoi(cTemp)*tekunit(&bbq[6]);
+	       printf("Voltage per division: %lf\n", tekvolt);
+            }
+            // info on time per division setting
+            if (k == 3)
+	    {
+               memcpy(cTemp, &bbq[1], 5);
+               cTemp[5] = 0;
+               bbq[7] = 0;
+               tektime = atoi(cTemp)*tekunit(&bbq[6]);
+	       printf("Time per division: %lf\n", tektime);
+            }
+            // info on last point to be transfered by CURVE?
+            if (k == 4)
+	    {
+               bbq[strlen(bbq)-7] = 0;
+               sprintf(cmd, "DATA:STOP %d", atoi(bbq));
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+               vxi11_command(clink, cmd);
+#else
+	       printf("Stop data collection (DATA:STOP): %s\n", cmd);
+#endif
+            }
+//	    printf("bbq = %s\n",bbq);
+            bbq = strtok (NULL, ",");
+         }
+      }
+
+      // Recheck waveform and data options/settings, turn off header
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_query(clink,"WFMO:WFID?");
+      vxi11_query(clink,"DATA?");
+      vxi11_command(clink,(char*)"HEADER OFF");
+#else
+      printf("Data format query (WFMOUTPRE:WFID?, DATA?, HEADER OFF).\n");
+#endif
+
+      // Get the channel y-axis offset (only for one CH so far)
+      char posoff[WAVE_LEN];
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      sprintf(cmd, "%s:POS?", allChans[scopeChans[0]]);
+      vxi11_command(clink, cmd);
+      vxi11_receive(clink, posoff, WAVE_LEN);
+      choffset = (double)atof(posoff);
+#else
+      sprintf(posoff, "Just some temporary string info.");
+      printf("Check for channel position offset (CHx:POS?)\n");
+#endif
+
+      // If measurements are to be performed
+      if(scopeUseType == 2)
+      {
+	 sprintf(cmd, "MEASU:IMM:SOURCE1 %s", scopeChanstring);
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+	 vxi11_command(clink, cmd);
+#else
+         printf("Set immediate measurement source (MEASU:IMM:SOURCE1): %s\n", cmd);
+#endif
+
+	 sprintf(cmd, "MEASU:IMM:TYP %s", measType[scopeMeasSel]);
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+	 vxi11_command(clink, cmd);
+#else
+	 printf("Set immediate measurement type (MEASU:IMM:TYP): %s\n", cmd);
+#endif
+      }
+
+      return 0;
+   }
+}
+// ---------------------------------------------------------------
+
+// Send a custom command to the scope ----------------------------
+int daqscope::customCommand(char *command, bool query, char *sReturn)
+{
+   if(query)
+   {
+      char buf[WAVE_LEN];
+      memset(buf, 0, WAVE_LEN);
+      vxi11_send(clink, command);
+      int bytes_returned = vxi11_receive(clink, buf, WAVE_LEN);
+      if (bytes_returned > 0)
+      {
+         printf("%s\n", buf);
+	 sprintf(sReturn, "%s", buf);
+
+	 // For testing purposes
+/*	 if( strcmp(command, "CURVE?") == 0 )
+	 {
+	    FILE *fp;
+	    char tst[2];
+	    fp = fopen("./curve_return.txt","w");
+            for(int i = 6; i < bytes_returned; i++)
+	    {
+	       if(i%2 == 1)
+	       {
+		  tst[0] = buf[i];
+		  tst[1] = buf[i-1];
+	          fprintf(fp, "bytes returned = %d\tbyte %d = %d\treturn = %s\n", bytes_returned, i, buf[i], tst);
+	       }
+	       else
+	          fprintf(fp, "bytes returned = %d\tbyte %d = %d\n", bytes_returned, i, buf[i]);
+	    }
+	    fclose(fp);
+	 }*/
+      }
+      else if (bytes_returned == -15)
+      {
+         printf("*** [ NOTHING RECEIVED ] ***\n");
+	 sprintf(sReturn, "*** [ NOTHING RECEIVED ] ***");
+      }
+   }
+   else
+   {
+      vxi11_command(clink, command);
+      sprintf(sReturn, "*** [ COMMAND NOT QUERY - NO RETURN ] ***");
+   }
+
+   return 0;
+}
+// ---------------------------------------------------------------
+
+// Get a measuring event (either waveform or measure) ------------
+int daqscope::lockunlock(bool lockit)
+{
+   // Lock the scope front panel for measurements
+   if(lockit)
+   {
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_command(clink,(char*)"LOCK ALL");
+      return 0;
+#else
+//      printf("Locking the front panel (LOCK ALL).\n");
+      return -1;
+#endif
+   }
+   // Unlock the scope front panel after measurements
+   else
+   {
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      vxi11_command(clink,(char*)"LOCK NONE");
+      return 0;
+#else
+//      printf("Unlocking the front panel (LOCK ALL).\n");
+      return -1;
+#endif
+   }
+}
+// ---------------------------------------------------------------
+
+// Get a measuring event (either waveform or measure) ------------
+int daqscope::event()
+{
+   int bytes_returned;
+
+   if(scopeUseType == 0)
+      return -1;
+   else if(scopeUseType == 1)
+   {
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      memset(eventbuf, 0, WAVE_LEN);
+      vxi11_send(clink, "CURVE?");
+      bytes_returned = vxi11_receive(clink, eventbuf, WAVE_LEN);
+#else
+      printf("Ask to return the waveform (CURVE?)\n");
+      bytes_returned = 0;
+#endif
+
+      if(bytes_returned > 0) return 0;
+      else return -1;
+   }
+   else if(scopeUseType == 2)
+   {
+#if WORKSTAT == 'I' || WORKSTAT == 'S'
+      char buf[WAVE_LEN];
+      memset(buf, 0, WAVE_LEN);
+      vxi11_send(clink, "MEASU:IMMED:VALUE?");
+      bytes_returned = vxi11_receive(clink, buf, WAVE_LEN);
+      measubuf = (double)atof(buf);
+#else
+//      printf("Ask to return the measurement (MEASU:IMMED:VALUE?)\n");
+      bytes_returned = 0;
+      measubuf = (double)rand()/(double)RAND_MAX;
+#endif
+
+      if(bytes_returned > 0) return 0;
+      else return -1;
+   }
+   else
+      return -1;
+}
+// ---------------------------------------------------------------
+
+// daqscope class constructor and destructor ---------------------
+daqscope::daqscope() {
+   fStop=0;
+}
+
+daqscope::~daqscope() {
+   disconnect(savedIP);
+}
+// ---------------------------------------------------------------

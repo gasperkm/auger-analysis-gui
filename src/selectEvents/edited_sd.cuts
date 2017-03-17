@@ -1,0 +1,16 @@
+ADST cuts version: 1.0
+
+# SD cuts
+!lightning
+
+minRecLevel           3   # see SdRecLevel.h
+maxZenithSD          60.  # maximum zenith angle [deg.]
+T4Trigger             2
+T5Trigger             2   # 1: 5T5 post, 2: 6T5 prior, 3: T5Has
+
+minLgEnergySD  18.6
+maxLgEnergySD  18.9
+
+badPeriodsRejectionFromFile
+
+timeInterval { params: 031231 170101 }

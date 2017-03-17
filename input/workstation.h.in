@@ -1,0 +1,23 @@
+#ifndef _workstation_h_
+#define _workstation_h_
+
+// Debug signal (0 = no debug, 1 = printout debug, 2 = structure + printout debug)
+#define DBGSIG 0
+
+#define rootdir "path-to-installation"
+
+#define OFFVER SOMETHING
+
+#define ALLEYES 4
+
+// Title colors and font
+#define FORECOLOR 0xfcfcfc
+#define BACKCOLOR 0x2e5a86
+#define FONT "-*-helvetica-bold-r-normal-*-13-*-*-*-*-*-iso8859-"
+#define HELPFONT "-*-courier-bold-r-normal-*-13-*-*-*-*-*-iso8859-"
+
+// Global variables
+#define histext ".root"
+#define histextall "*.root"
+
+#endif

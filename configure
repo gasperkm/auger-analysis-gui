@@ -1,0 +1,330 @@
+#!/bin/bash
+
+function colorecho
+{
+  echo -e$2 "\033[33m$1\033[39m"
+}
+
+function errorecho
+{
+  echo -e "\031[33m$1\033[39m"
+}
+
+function helptext()
+{
+  colorecho "#------------------------------"
+  colorecho "# Configure instructions: -----"
+  colorecho "#------------------------------"
+  colorecho ""
+  colorecho "./configure [option] [install directories]"
+  colorecho ""
+  colorecho "[option] = Option for configure:"
+  colorecho "  help       Display configure instructions."
+  colorecho "  nomake     Configure installation, but do not run make."
+  colorecho "  all        Same as nomake, but compile the program afterwards with make."
+  colorecho "  lib        Same as nomake, but compile only libraries with make."
+  colorecho "  clean      Clean the installation directory. Does not clean the results directory."
+  colorecho "  compress   Compress the source code in a tar-ball."
+  colorecho ""
+  colorecho "[install directories] = Directories where ROOT and NET-SNMP are installed (when running with superuser, this is important, otherwise optional):"
+  colorecho "  --root-install=/root/install/directory"
+  colorecho ""
+  colorecho "Example:"
+  colorecho "  ./configure all new --root-install=/home/user/root"
+  colorecho ""
+  colorecho "#------------------------------"
+}
+
+# Check for arguments
+if [ "$1" == "" ]; then
+  errorecho "Error! No arguments supplied."
+  echo ""
+  helptext
+  exit 1
+else
+  # When using help, only display help and then exit
+  if  [ "$1" == "help" ]; then
+    helptext
+    exit 0
+  fi
+
+  # Print help and exit if we give a wrong first argument
+  if  [ "$1" != "nomake" ] && [ "$1" != "all" ] && [ "$1" != "lib" ] && [ "$1" != "clean" ] && [ "$1" != "compress" ]; then
+    errorecho "Error! Wrong configuration option selected (first argument)."
+    echo ""
+    helptext
+    exit 1
+  fi
+
+  startdir=$PWD
+#  oldoffline=/data0/gkukec/Programi/ape-0.99-v2r9p1
+#  newoffline=/data0/gkukec/Programi/offline-trunk
+
+  # Check for ROOT install directory
+  rootsearch="--root-install="
+  rootdirectory=-1
+  for var in $@
+  do
+    case $var in
+      "$rootsearch"*)
+        rootdirectory=${var#$rootsearch}
+        echo "ROOT directory: $rootdirectory";;
+      *) ;;
+    esac 
+  done   
+ 
+  # Check for installation directory of ROOT - if variables not currently set, remind user to set them before running make
+  if [ "$1" != "clean" ] && [ "$1" != "compress" ]; then
+    if [ $rootdirectory != -1 ]; then
+      printenv ROOTSYS > /dev/null
+      if [ $? != 0 ]; then
+        colorecho "ROOT environment variables not set. Please run \"source $rootdirectory/bin/thisroot.sh\", before using make."
+      fi
+    else
+      colorecho "Before running make, please make sure ROOT environment variables are set."
+    fi
+  fi
+
+  # When using compress, only create a tar-ball and then exit
+  if [ "$1" == "compress" ]; then
+    cd $startdir
+    if [ ! -d $startdir/auger-analysis-gui ]; then
+      mkdir $startdir/auger-analysis-gui
+      mkdir $startdir/auger-analysis-gui/results
+      mkdir $startdir/auger-analysis-gui/layout
+      mkdir $startdir/auger-analysis-gui/settings
+      mkdir $startdir/auger-analysis-gui/setup
+      echo "Copying files to temporary directory $startdir/auger-analysis-gui..."
+      cp -r configure ./dict ./doc ./include ./input ./src ./auger-analysis-gui/ 
+      cp -r ./layout/default.layout ./auger-analysis-gui/layout/
+      cp -r ./setup/setup_ADST.sh ./setup/*.tar.gz ./auger-analysis-gui/setup/
+      cd $startdir/auger-analysis-gui/setup
+      for f in *.tar.gz
+      do
+        tar -zxf $f
+      done
+      cd $startdir
+      echo "default.layout" > ./auger-analysis-gui/layout/selected_layout.txt
+# TODO - Settings default files
+      cd $startdir/auger-analysis-gui
+      echo "Cleaning the base directory in $startdir/auger-analysis-gui..."
+      rm -f ./*.bak
+      echo "Cleaning the subdirectories of $startdir/auger-analysis-gui..."
+      rm -f ./*/*.bak
+      cd $startdir/auger-analysis-gui/src
+      rm -f ./*/*.bak
+      cd $startdir
+      echo "Creating a tar-ball auger-analysis-gui.tar.gz..."
+      tar czf $startdir/auger-analysis-gui.tar.gz ./auger-analysis-gui
+      echo "Removing the temporary directory $startdir/auger-analysis-gui..."
+      rm -fr $startdir/auger-analysis-gui
+      exit 0
+    else
+      errorecho "Error! Directory ./auger-analysis-gui already exists."
+      exit 1
+    fi
+  fi
+
+  # Configure the workstation information and directory of program (0 if we find something and 1 otherwise)
+  basedir=$(echo $startdir | sed 's/\//\\\//g')
+
+  if [ "$1" == "nomake" ] || [ "$1" == "all" ] || [ "$1" == "lib" ]; then
+    for ver in 1 2
+    do
+      grep -q "#define rootdir \"path-to-installation\"" $startdir/input/workstation.h.in
+      if [ $? == 0 ]; then
+        sed "s/path-to-installation/$basedir/g" $startdir/input/workstation.h.in > $startdir/input/workstation.h.mid
+      fi
+      grep -q "#define OFFVER SOMETHING" $startdir/input/workstation.h.mid
+      if [ $? == 0 ]; then
+        if [ $ver == 1 ]; then
+           sed "s/OFFVER SOMETHING/OFFVER 0/g" $startdir/input/workstation.h.mid > $startdir/include/workstation.h
+#           cd $oldoffline
+#           ./aperc_setup.sh
+	   rm -f $startdir/input/workstation.h.mid
+        elif [ $ver == 2 ]; then
+           sed "s/OFFVER SOMETHING/OFFVER 1/g" $startdir/input/workstation.h.mid > $startdir/include/workstation.h
+#           cd $newoffline
+#           ./offline_devel.sh aperc
+	   rm -f $startdir/input/workstation.h.mid
+        else
+           errorecho "Error! The entered offline version is incorrect. Use old or new."
+	   rm -f $startdir/input/workstation.h.mid
+           exit 1
+        fi
+      fi
+
+      grep -q "BASEDIR" $startdir/input/plotsdir.h.in
+      if [ $? == 0 ]; then
+        sed "s/BASEDIR/$basedir/g" $startdir/input/plotsdir.h.in > $startdir/src/root_mva/plotsdir.h
+      fi
+
+      grep -q ":BASEDIR/src:" $startdir/input/TMVAGui.C.in
+      if [ $? == 0 ]; then
+        sed "s/BASEDIR/$basedir/g" $startdir/input/TMVAGui.C.in > $startdir/src/root_mva/TMVAGui.C
+      fi
+
+      cp $startdir/input/Makefile.in $startdir/Makefile
+   
+      if [ ! -d $startdir/lib ]; then
+        mkdir $startdir/lib
+      fi
+
+      # Create the two ADST versions (old and new)
+      if [ $ver == 1 ]; then
+         source $startdir/setup/setup_ADST.sh $startdir old
+	 if [ ! -d $ADSTROOT ]; then
+	    cd $startdir/setup
+	    for ball in *.tar.gz
+	    do
+	       tar -zxf $ball
+	    done
+	 fi
+	 cd $ADSTROOT
+	 make
+      elif [ $ver == 2 ]; then
+         source $startdir/setup/setup_ADST.sh $startdir new
+	 if [ ! -d $ADSTROOT ]; then
+	    cd $startdir/setup
+	    for ball in *.tar.gz
+	    do
+	       tar -zxf $ball
+	    done
+	 fi
+	 cd $ADSTROOT
+	 make
+      fi
+   
+      if [ $ver == 2 ]; then
+        cd $startdir
+        echo "#!/bin/bash" > $startdir/start.sh
+        echo "dir=\`dirname \$0\`" >> $startdir/start.sh
+        echo "" >> $startdir/start.sh
+        echo "if [ \"\$1\" == \"old\" ]; then" >> $startdir/start.sh
+        echo "  source $startdir/setup/setup_ADST.sh $startdir old" >> $startdir/start.sh
+        echo "  cd $startdir" >> $startdir/start.sh
+        echo "elif [ \"\$1\" == \"new\" ]; then" >> $startdir/start.sh
+        echo "  source $startdir/setup/setup_ADST.sh $startdir new" >> $startdir/start.sh
+        echo "  cd $startdir" >> $startdir/start.sh
+        echo "else" >> $startdir/start.sh
+        echo "  echo \"Error! No offline version supplied. Please use old or new.\"" >> $startdir/start.sh
+	echo "  exit 1" >> $startdir/start.sh
+        echo "fi" >> $startdir/start.sh
+        echo "" >> $startdir/start.sh
+        echo "rootdirectory=$rootdirectory" >> $startdir/start.sh
+        echo "" >> $startdir/start.sh
+        cat $startdir/input/start.sh.in >> $startdir/start.sh
+        chmod ug+x $startdir/start.sh
+   
+        # In case we just want to set the workstation information, exit here
+        if [ "$1" == "nomake" ]; then
+          exit 0
+        fi
+      fi
+   
+      if [ "$1" == "lib" ]; then
+        cd $startdir
+        if [ -f $startdir/Makefile ]; then
+          make library
+          if [ $? != 0 ]; then
+            errorecho "Error! Compiling libraries failed."
+            rm -fr $startdir/lib
+            exit 1
+          fi
+        else
+          errorecho "Error! No makefile found."
+          rm -fr $startdir/lib
+          exit 1
+        fi
+        exit 0
+      fi
+   
+      if [ ! -d $startdir/bin ]; then
+        mkdir $startdir/bin
+      fi
+
+      # In case we do all, also execute Makefile
+      if [ "$1" == "all" ]; then
+        cd $startdir
+        if [ -f $startdir/Makefile ]; then
+          make library
+          if [ $ver == 1 ]; then
+            make auger-analysis-gui-old
+          elif [ $ver == 2 ]; then
+            make auger-analysis-gui-new
+          fi
+          if [ $? != 0 ]; then
+            errorecho "Error! Compiling the program failed."
+            rm -fr $startdir/bin
+            rm -fr $startdir/lib
+            exit 1
+          fi
+        else
+          errorecho "Error! No makefile found."
+          rm -fr $startdir/bin
+          rm -fr $startdir/lib
+          exit 1
+        fi
+      fi
+   
+#     if [ $ver == 1 ]; then
+#        eval \`$oldoffline/ape sh offline\`
+#     elif [ $ver == 2 ]; then
+#        source $newoffline/env_offline.sh
+#     fi
+#  
+#     if [ "$1" == "lib" ]; then
+#       cd $startdir
+#       if [ -f $startdir/Makefile ]; then
+#         make library
+#         if [ $? != 0 ]; then
+#           errorecho "Error! Compiling libraries failed."
+#           rm -fr $startdir/lib
+#           exit 1
+#         fi
+#       else
+#         errorecho "Error! No makefile found."
+#         rm -fr $startdir/lib
+#         exit 1
+#       fi
+#       exit 0
+#     fi
+#  
+#     if [ ! -d $startdir/bin ]; then
+#       mkdir $startdir/bin
+#     fi
+#  
+#     # In case we do all, also execute Makefile
+#     if [ "$1" == "all" ]; then
+#       cd $startdir
+#       if [ -f $startdir/Makefile ]; then
+#         make library
+#         if [ $ver == 1 ]; then
+#           make auger-analysis-gui-old
+#         elif [ $ver == 2 ]; then
+#           make auger-analysis-gui-new
+#         fi
+#         if [ $? != 0 ]; then
+#           errorecho "Error! Compiling the program failed."
+#           rm -fr $startdir/bin
+#           rm -fr $startdir/lib
+#           exit 1
+#         fi
+#       else
+#         errorecho "Error! No makefile found."
+#         rm -fr $startdir/bin
+#         rm -fr $startdir/lib
+#         exit 1
+#       fi
+#     fi
+    done
+  fi
+
+  if [ "$1" == "clean" ]; then
+    cd $startdir
+    make clean
+    rm -f Makefile
+  fi
+fi
+
+exit 0

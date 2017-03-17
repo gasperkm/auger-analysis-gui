@@ -1,0 +1,258 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/mman.h>
+#include <errno.h>
+#include <signal.h>
+#include <ctype.h>
+#include <time.h>
+//#include "../include/wusbxx_dll.h" /* the header of the shared library */
+#include "../include/daq.h"
+
+//#define DEBUG /* vkljuci dodatni izpis */
+#ifdef DEBUG
+  #define DBG(X) X
+  #define DBGFUNI(X) printf(">>> %s -> %d\n",#X,(X))
+#else
+  #define DBG(X)
+  #define DBGFUNI(X) X
+#endif
+
+/* definiram lokacije enot*/
+//#define NTDC 1         /* TDC */
+//#define NTDCCH 8
+//#define NADC 2         /* ADC */
+//#define NADCCH 8
+int ctrlc=0;
+char *ccserial=(char*)"CC0126";
+int devDetect;	// variable to tell if we detect any devices
+
+int daq::connect(){
+// odpri daq
+/*  xxusb_device_type devices[100];
+  //struct usb_device *dev;
+  devDetect = xxusb_devices_find(devices);
+//  printf("Detected devices: %d\n", devDetect);
+  //dev = devices[0].usbdev;
+  //udev = xxusb_device_open(dev);
+
+  if(devDetect > 0)
+  {
+    WUSBXX_load(NULL);
+    WUSBXX_open(ccserial);
+    printf("daq::connect()\n");
+  }
+  else
+*/    printf("daq::connect() - No devices were detected!\n");
+  return 0;
+}
+
+int daq::init(int chan = 0){
+
+//    int i;  
+//    long k;
+
+/*    DBGFUNI(xxusb_register_write(udev,1,0x0)); // Stop DAQ mode
+    while (xxusb_usbfifo_read(udev, (int*) stackdump,BUFF_L,100)>0); 
+  
+    CCCZ;
+    CCCC;
+    CREM_I;
+
+    NTDC = 1;
+    NADC = 2;
+    if(chan != 0)
+    {
+      NTDCCH = chan/2;
+      NADCCH = chan/2;
+    }
+    else
+    {
+      NTDCCH = 1;
+      NADCCH = 1;
+    }
+    printf("after: NTDCCH = %d, NADCCH = %d\n", NTDCCH, NADCCH);
+
+// create command stack for the TDC and ADC
+    k=1;
+    for(i=0;(i<NTDCCH)&&(i<NADCCH);i++) { stackwrite[k++]=NAF(NTDC,i,0); stackwrite[k++]=NAF(NADC,i,0); }
+//    for(i=0;i<NADCCH;i++) stackwrite[k++]=NAF(NADC,i,0);
+    stackwrite[k++]=NAF(NTDC,0,9);
+    stackwrite[k++]=NAF(NADC,0,9);
+    stackwrite[k++]=NAFS(0,0,16); // insert next word to data
+    stackwrite[k++]=0xfafb; // event termination word
+    stackwrite[0]=k-1;
+// upload stack #2
+    xxusb_stack_write(udev,0x2,(long int *)stackwrite);
+    xxusb_stack_read(udev,0x2,(long int *) stackdata);
+    DBG(for(i=0;i<k;i++) printf("0x%04x\n",stackdata[i]);)
+
+    int ret[10];
+    
+    CAMAC_LED_settings(udev, 1,1,0,0);
+    ret[0] = CAMAC_register_read(udev,0,&k);
+    printf("Firmware ID (return %d) -> 0x%08lX\n",ret[0],k);		// GKM: Firmware ID (i.e. 0x72000001 = 0111 0010 0000 0000 0000 0000 0000 0001)
+    ret[1] = CAMAC_register_read(udev,1,&k);
+    printf("Global Mode (return %d) -> 0x%08lX\n",ret[1],k);
+    k=(k&0xF000)|0x0005; // set buffer length: n=0..6 -> 0x10000 >> n, n=7 -> single event
+    ret[0] = CAMAC_register_write(udev,1,k);				// GKM: sets the buffer length (i.e. k=5 -> buf length=128 words)
+    ret[1] = CAMAC_register_write(udev,2,0x80); // wait 0x80 us after trigger		// GKM: delay settings in microseconds
+    ret[2] = CAMAC_register_write(udev,3,0x0); // Scaler Readout Control Register		// GKM: scaler readout settings - sets the frequency of readout (if 0, it is disabled)
+    ret[3] = CAMAC_register_write(udev,9,0x0); // Lam Mask Register		// GKM: When 0, readout is triggered by the signal on NIM input
+    ret[4] = CAMAC_register_write(udev,14,0x0); // USB Bulk Transfer Setup Register
+
+    //    CAMAC_DGG(udev,1,2,3,0,200,0,0);
+    //    CAMAC_DGG(udev,0,0,0,0,100,0,0);
+    ret[5] = CAMAC_register_write(udev,5,(0x06<<16)+(0x04<<8)+0x00); // output		// GKM: NIM outputs (i.e. 0x060400 = 00 0110 0000 0100 0000 0000 -> NIM O2=DGG_B, NIM O3=DGG_A)
+    ret[6] = CAMAC_register_write(udev,6,(0x01<<24)+(0x01<<16)+(0x0<<8)+0x0); // SCLR & DGG	// GKM: device source selector (i.e. 0x01010000 = 00 0000 0001 0000 0001 0000 0000 0000 0000 -> DGG_A=NIM I1, DGG_B=NIM I1, SCLR=disabled)
+    ret[7] = CAMAC_register_write(udev,7,(100<<16)+0); // output		// GKM: Delay and Gate Generator A registers (i.e. 0x00640000 = 0000 0000 0110 0100 0000 0000 0000 0000 -> DDG_A [gate=100, delay=0])
+    ret[8] = CAMAC_register_write(udev,8,(10000<<16)+0); // output	// GKM: Delay and Gate Generator B registers (i.e. 0x27100000 = 0010 0111 0001 0000 0000 0000 0000 0000 -> DDG_B [gate=10000, delay=0])
+    ret[9] = CAMAC_register_write(udev,13,0); // output		// GKM: Extended (course) delay (i.e. 0x00000000 = 0 -> DDG_A ext=0, DDG_B ext=0)
+
+//    for(i = 0; i < 10; i++) printf("Setting %d? -> return = %d\n",i,ret[i]);
+
+//    ret[0] = CAMAC_register_read(udev,1,&k);
+//    printf("k (return %d) -> 0x%08lX\n",ret[0],k);
+    
+*/    printf("daq::init()\n");
+    return 0;
+}
+
+int daq::start(){
+//    xxusb_register_write(udev,1,0x1); // Start DAQ mode
+    printf("daq::start()\n");
+    return 0;
+}
+
+int daq::stop(){
+//    xxusb_register_write(udev,1,0x0); // Stop DAQ mode
+//    while (xxusb_usbfifo_read(udev,(int *)stackdump,BUFF_L,30)>0);
+    printf("daq::stop()\n");
+    return 0;
+}
+
+int daq::event(unsigned int *data, int maxn){
+//    int ib,count;
+    int count;
+/*    int events,evsize;
+    short ret;
+
+    ib=0;
+    ret=xxusb_usbfifo_read(udev,(int *) stackdata,BUFF_L,500);
+    events=stackdata[ib++];
+    DBG(printf("ret=%d,events=0x%08x\n",ret,events);)
+      if ((ret<0)||(ret!=(((NTDCCH+NADCCH)*4+4)*events+4))) return 0;
+
+    count=0;
+    while (ib<(ret/2-1)){
+      evsize = stackdata[ib++]&0xffff;
+      DBG(printf("Event:%d EvSize:%d\n", events, evsize);)
+      for (int i=0;i<(NTDCCH+NADCCH);i++,ib++)  data[count++] =stackdata[ib++]&0xffff;
+      if (stackdata[ib++]!=0xfafb){
+        printf("Error!\n");,
+        return 0;
+      }
+      events--;
+      if (fStop) return 0;
+    } 
+    if (stackdata[ib++]!=0xffff){
+      printf("Error!\n");
+      return 0;
+    }
+*/
+    count = 1;
+    return count;
+}
+  
+int daq::disconnect(){ 
+// zapri daq
+//    WUSBXX_close();
+    printf("daq::disconnect()\n");
+    return 0;
+}
+
+daq::daq(){
+  fStop=0;
+  connect();
+//  if(devDetect > 0)
+//    init();
+}
+
+daq::~daq(){
+disconnect();
+}
+
+#ifdef MAIN
+void CatchSig (int signumber)
+{
+   ctrlc = 1;
+}
+
+
+int main (int argc, char **argv){
+  
+  int neve=1000000;
+  char *fname="test.dat";
+  if (argc==1) {
+    printf("Uporaba: %s stevilo_dogodkov ime_datoteke\n",argv[0]);
+    printf("Meritev prekini s Ctrl-C, ce je nabranih dogodkov ze dovolj\n");
+    exit(0);
+  } 
+  if (argc>1) neve  = atoi(argv[1]);
+  if (argc>2) fname = argv[2];
+  
+  
+// intercept routine
+  if (signal (SIGINT, CatchSig) == SIG_E,RR) perror ("sigignore");
+   
+#define BSIZE 10000
+  int i,ieve,nc,nb;
+//  int hdr[4]={1,(NTDCCH+4)*sizeof(int)};	// hdr[0]=1, hdr[1]=(NTDCCH+4)*4
+  int hdr[4]={1,(NTDCCH+NADCCH+4)*sizeof(int)};
+  unsigned short adc;
+  unsigned int data[BSIZE];
+  daq *d= new daq();,
+  time_t time_check;,
+
+// odpremo datoteko za pisanje
+  FILE *fp=fopen(fname,"w");
+
+  d->start();
+  ieve=0;
+  
+  while((ieve<neve)&&(!ctrlc)){
+    nc=d->event(data,BSIZE);
+    nb=0;
+    while((nc>0)&&(ieve++<neve)&&(!ctrlc)){
+      // zapis v datoteko   
+      hdr[2]=time(NULL);
+      hdr[3]=ieve;
+      fwrite(hdr,sizeof(int),4 ,fp); 
+      fwrite(&data[nb],sizeof(int),(NTDCCH+NADCCH),fp);
+//      DBG(
+        for(i=0;i<(NTDCCH+NADCCH);i++){
+          adc=data[nb+i]&0xFFFF;	
+          if(i % 2 == 0)
+printf(/*"nev=%4d %d. TDC data=%d\n"*/"%d\t"/*,ieve,i*//*/2*/,adc);
+//            printf("nev=%4d %d. TDC data=%d\n",ieve,i/2,adc);
+          else if(i % 2 == 1)
+printf(/*"nev=%4d %d. TDC data=%d\n"*/"%d\t"/*,ieve,i*//*/2*/,adc);
+//            printf("nev=%4d %d. ADC data=%d\n",ieve,i/2,adc);
+        }
+printf("\n");
+//      )
+      nb+=(NTDCCH+NADCCH);
+      nc-=(NTDCCH+NADCCH);
+      if (!(ieve%1000)) printf("event no. -> %d\n",ieve);
+    };
+  };
+   
+  d->stop();
+  fclose(fp);
+  printf("Podatki so v datoteki %s\n", fname);
+  delete d;
+
+  return 0;
+}
+#endif

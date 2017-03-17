@@ -1,0 +1,37 @@
+SOFTWARE FOR SIPM CHARACTERIZATION WITH CAMAC, SCOPE, BIAS VOLTAGE AND TABLE POSITION SUPPORT
+=============================================================================================
+By Gasper Kukec Mezek, April 2015.
+
+________________
+1. Installation:
+
+Pre-requisites:
+A newer (5.34 or higher, support for version 6 not added yet) pro version of ROOT (https://root.cern.ch).
+
+Installation is done through the usual "./configure" and "make" commands.
+
+Configure takes the following arguments:
+- First argument is the configure option (help, nomake, all, lib, clean, compress):
+    help = shows configure help
+    nomake = configure installation but do not run make
+    lib = same as nomake, but compile libraries afterwards with make
+    all = same as nomake, but compile the program afterwards with make
+    clean = cleans the installation to the base file structure (keeps the results directory)
+    compress = compresses the base installation into a tar-ball
+- The following arguments set specific computer details and can be entered in any order:
+    a) --root-install=/path/to/root/directory -> The ROOT install directory, if it is not installed in a standard location (especially needed when running the program with superuser, since it usually does not have the required environment variables).
+
+Running "./configure" or "./configure help" will give more information on specific uses.
+Example:
+   ./configure all --root-install=/opt/root
+
+Makefile:
+Once configuration is done, a Makefile will be generated and further installation is done by running "make". Running "make library" will only recreate the libraries in case something has been edited in them.
+Example:
+   make
+
+________________________
+2. Running the software:
+
+Once installation is performed, use
+   ./start.sh

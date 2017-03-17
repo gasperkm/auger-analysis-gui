@@ -1,0 +1,596 @@
+SOFTWARE FOR SIPM CHARACTERIZATION WITH CAMAC, SCOPE, BIAS VOLTAGE AND TABLE POSITION SUPPORT
+=============================================================================================
+By Gasper Kukec Mezek, April 2015.
+
+==============
+= Contents ===
+==============
+
+  1.  Installation
+  2.  Running the software
+  3.  Program feature overview
+  3a. Current program version (trunk)
+  3b. Old program version (trunk_v0.9)
+  4.  Preparing for measurements
+  4a. Pre-software checks
+  4b. Experimental setup pre-measurement checks
+  4c. Software pre-measurement checks
+  5.  Measurements
+  5a. Measurement settings
+  5b. Temperature chamber considerations
+  5c. Movement table
+  5d. Bias voltage supply
+  6.  Measurement files
+  6a. ROOT file structure
+  6b. Opening measurement files
+  7.  Analysis
+  8.  Change log
+
+=====================
+= 1. Installation ===
+=====================
+
+See auger-analysis-gui/doc/INSTALL for installation instructions or use "./configure help".
+
+=============================
+= 2. Running the software ===
+=============================
+
+Once installation is performed, use
+   ./start.sh
+
+=================================
+= 3. Program feature overview ===
+=================================
+
+This part describes the different parts of the software and a short description on what they do.
+____________________________________
+3a. Current program version (trunk):
+
+The main window is divided into 4 tabs and then further into subwindows:
+1) Measurement tab:
+   a) Settings pane:
+      - ON/OFF switches for voltage, surface, Z axis and rotation scans (ON when checked).
+      - A voltage limiter -> Sets the maximum output voltage that can be set under Output voltage (sample safety reasons).
+      - Nr. of channels -> The number of channels to measure. Each channel corresponds to an ADC/TDC pair.
+      - Position units -> For display, use either movement table native units or micrometers (table units default).
+      - Rotation units -> For display, use either rotation table native units or degrees (degrees default).
+      - Scope IP -> Sets the oscilloscope IP address for connections to a device.
+      - LASER settings info panel -> Additional information to be written to the output file header (most generally used for
+        laser information).
+      - Chamber temperature -> Chamber temperature to be written to the output file (temperature not directly taken from the
+        fieldpoint sensor).
+      - Live histogram ON/OFF -> ON/OFF switch for live histogram update. Offers quick overview of the current measurement.
+        Should be avoided for scans.
+   b) Display: Display of the live histogram, when it is turned on.
+   c) Main measurement window:
+      - Settings for bias voltage, table position and incidence angle measurements.
+      - Additional settings enabled, when scans are enabled.
+      - If only one directional scan in X or Y direction is needed, set measurement to a surface scan and leave the other
+      step size to 0.
+      - Number of events -> Number of events gathered in one measurement.
+      - Time stamp -> Date and time of measurement that is written to the header of the output file.
+      - Save to file -> Selecting of output file filename. For scans, sequential numbers are appended to the end of the
+      selected filename (i.e. /path/to/test.root will in a scan have /path/to/test_001.root, /path/to/test_002.root,...).
+      - Start acquisition -> Starts the measurement based on currently selected settings.
+      - Current measurement progress bar -> Determines the status of the current measurement.
+
+2) Analysis tab:
+   a) Histogram file selection:
+      - Open past measurements for analysis. Additional display of header information for quicker reference.
+      - If using multiple files for the analysis, use multiple file select or select all listed files. They will be used in
+      order displayed on the list.
+      - Use the Clear list button to clear all entries in from the list.
+      - Use the edit header button to update any information inside the headers of entries selected on the list.
+   b) Histogram: Displays the currently selected histogram from the histogram file selection subwindow.
+   c) Histogram controls:
+      - Enables plotting options for the currently selected histogram and to setup spectral options for analysis.
+      - ADC range -> Sets the range of the ADC spectrum. Ranges are automatic, when set to (0,0).
+      - TDC range -> Sets the range of the TDC spectrum. TDC spectrum determines the events used for plotting the ADC spectrum.
+      - Y range -> Sets the range of the Y axis on the spectrum. Ranges are automatic, when set to (0,0). 
+      - Display channel -> Selects the channel to plot, when opening a multichannel measurement file.
+      - Plot type buttons -> Buttons to change between ADC, TDC or ADC/TDC type of plot.
+      - Logarithmic scale ON/OFF -> Toggle for logarithmic Y axis scale.
+      - Clean plots ON/OFF -> Toggle for hiding plot information or not (such as plot title, fitting information, statistics
+      information).
+      - Export -> Exports the currently selected histograms (ADC, TDC or ADC/TDC form selected files) into the .pdf format.
+      - Edit -> UNDER DEVELOPMENT! Opens the currently visible plot in the Histogram subwindow in a new tab to enable editing.
+   d) Analysis:
+      - Options for specific analysis types (integrate spectrum, relative PDE, breakdown voltage, surface scan, timing). When
+      using Start button, analysis starts, saves results and quits. When using Start and edit button, analysis starts and gives
+      options to further edit the results.
+      - General fit settings (Peak sigma, S/N ratio, background interpolation, ADC spectrum offset, Maximum acceptable peak
+      fit error, pedestal lower limit, background subtraction, export fits). Settings for analysis based on fitting of peaks
+      on the ADC spectra (breakdown voltage and relative PDE). The current progress of the analysis is displayed on the
+      progress bar.
+
+3) Monitoring tab: UNDER DEVELOPMENT! Fieldpoint temperature sensor data view.
+
+4) Help tab: Displays the contents of this help file.
+
+On the top, there are 3 menus:
+a) File:
+   - Set user layout -> Set a user saved layout of the program subwindows or use the default.
+   - Save current layout -> Save the program subwindow layout to be used later. This will remember the sizes of each subwindow
+   (Settings pane, Main measurement window, Display, Histogram file selection,...) and the overall size of the program window.
+   - Save current measurement settings -> UNDER DEVELOPMENT! Will evantually save the entered values from the Measurement tab.
+   - Save current analysis settings -> UNDER DEVELOPMENT! Will eventually save the entered values from the Analysis tab.
+   - Exit -> Exit the software (shortkey x)
+
+b) Analysis (each takes you to the appropriate options for the analysis):
+   - Histogram type -> Change between histogram types (same as in histogram controls window).
+   - Fit spectrum -> UNDER DEVELOPMENT! Will produce a fit of ADC spectrum peak structure of the current file/files.
+   - Integrate spectrum -> Integrate the ADC spectrum of the current file/files inside the selected ADC range.
+   - Integrate spectrum (X direction) -> Same as Integrate spectrum, but the selected files were produced as X axis scans.
+   Makes the determination of an X directional edge scan and produces a 2D plot if Z axis scan was also enabled.
+   - Integrate spectrum (Y direction) -> Same as Integrate spectrum (X direction), but the selected files were produced as
+   Y axis scans.
+   - Relative PDE -> Produce a relative PDE plot, where selected files were produced as incidence angle scans.
+   - Surface 2D scan -> Produce an integral of the ADC spectrum, where selected files were produced as surface scans (in
+   X and Y directions).
+   - Timing analysis -> UNDER DEVELOPMENT! Will make an analysis on the TDC spectrum of measurements.
+
+c) Help information
+
+Important!
+When using any analysis method, only events inside the selected TDC window will be used (set the TDC range accordingly).
+
+_____________________________________
+3b. Old program version (trunk_v0.9):
+
+The main window is divided into 5 subwindows:
+a) Settings window:
+   - ON/OFF switches for voltage and surface scans.
+   - a voltage limiter -> sets the maximum output voltage for safety reasons
+   - clean plots toggle switch -> when ON, no additional stats will be displayed on plots/histograms
+   - scope IP -> sets the oscilloscope IP address
+   - LASER settings info panel -> this will be written to the output file and is used for supplying additional information
+   - chamber temperature -> the chamber temperature to be written to the output file
+   - incidence angle -> the angle at which the sample is rotated around its axis, relative to the LASER beam (0 degrees is
+   perpendicular to LASER beam)
+
+b) Main measurement window:
+   - settings for table position and bias voltage
+   - when scans are enabled, additional settings for scans
+   - number of events -> setting for the number of events to gather in a measurement
+   - time stamp -> informational time (start time of measurement is written to output file)
+   - file selector (for scans, the filenames will be appended sequential numbers to distinguish them)
+   - start acquisition button -> starts the measurement based on selected settings
+   - waveform analysis settings (channel, measurement type)
+   - possibility to send custom one-line commands
+
+c) Histogram file selection window:
+   - open past measurements for analysis
+   - if using multiple files, use multiple file select or select all listed files
+   - files will be used in order displayed on the list
+   - to clear the complete list, use the clear list button
+   - to edit the header information of currently selected files, use the edit header button
+   - any opened measurement has an info display of its header at the bottom for easier navigation
+
+d) Histogram window:
+   - displays the currently selected histogram in the histogram file selection window
+
+e) Histogram controls window:
+   - directly linked to the histogram window, it enables plotting options
+   - can set ranges on histogram plots
+   - can change between different histogram types (ADC, TDC, ADC vs. TDC, 2D surface plot)
+   - for the 2D surface plot, the relevant files need to be selected in the histogram file selection window
+   - toggle for logarithmic Y scale
+   - the currently selected histogram can be manually exported with the export button
+   - fit settings used when running "Fit spectrum" and "Fit all selected" options in the Analysis menu
+
+On the top, there are 4 menus:
+a) File:
+   - New Measurement -> not working
+   - Exit -> exit the software (shortkey x)
+
+b) Analysis:
+   - Histogram type -> change between histogram types (same as in histogram controls window)
+   - Fit spectrum -> fit the currently open spectrum for peaks
+   - Fit all selected -> fit all the selected ADC spectra selected in the histogram file selection window for peaks and display
+   the breakdown voltage plots
+   - Integrate spectrum (X, Y) -> integrate the ADC spectrum for multiple files with an X or Y scan (used for edge scans)
+   - Relative PDE -> calculation of the relative PDE for the currently selected files
+
+c) Tools:
+   - Fieldpoint temperature sensor -> direct graphing of the fieldpoint temperature sensor (with settings for fieldpoint channel,
+   start time and end time), output is a graph (if exporting) and a comma separated list saved to folder ./fieldpoint. Updating
+   the graph can cause unstable behavior. If possible, use ~/sipmscan/fieldpoint_standalone instead.
+
+d) Windows:
+   - Specific window tiling
+   - Switch between active windows
+
+e) Help information
+
+Important!
+When using any analysis method (surface 2D plot, fitting, integration, ADC spectra display) only events inside the selected TDC
+window will be used so set the TDC range accordingly.
+
+===================================
+= 4. Preparing for measurements ===
+===================================
+
+General information for preparing the experimental setup and software for measurements.
+
+________________________
+4a. Pre-software checks:
+
+Before running the Online version of the program, make sure that CAMAC (Computer Automated Measurement And Control) is turned
+on and is connected to the computer via a USB cable. If upon starting, the program gives the following message:
+
+        daq::connect() - No devices were detected!
+
+then CAMAC was not started or the program did not properly register it.
+
+In addition, for the Online version of the program, make sure that all movement table controllers are turned on and are connected
+to the computer via a USB cable.
+
+For the connection with the oscilloscope (Online and Offline with scope control versions of the program), make sure it is
+connected to the same network with a UTP cable and that the VXI software is started on it.
+
+______________________________________________
+4b. Experimental setup pre-measurement checks:
+
+When making changes inside the setup, make sure that no cables are hindering the movement of any of the movement tables. For
+the X, Y and Z axis table, the most critical are motor control cables (white, flat, multiwire cables) and the optical cable
+for laser optics (yellow or orange optical fibre). For the rotation table, the most critical are voltage supply cable (marked
+with BIAS) and signal cables (the same as bias cable, but unmarked or marked with SIGNAL).
+
+Additionally, whenever putting the experimental setup back together, note the distance between the laser optics and the sample.
+The sample should be placed out of harms way from the collimator of the optics (check it by setting Z axis position to 0).
+
+____________________________________
+4c. Software pre-measurement checks:
+
+Before starting any measurement, it is suggested to set the Voltage limit (Settings pane, Measurement tab) in order to avoid
+any unwanted mistakes in bias voltage settings (to avoid any irreparable damage to the sample). Also, make sure to note the
+output channel for bias voltage supply and not change any other channels (since they could be connected to other experimental
+setups).
+
+=====================
+= 5. Measurements ===
+=====================
+
+Information on the settings for performing measurements available in this program and information on the movement tables.
+
+_________________________
+5a. Measurement settings:
+
+On the Settings pane in the Measurement tab, the type of measurement can be selected:
+- None is checked: The program will perform a single measurement (useful for quickly determining the state of the setup).
+- Voltage scan is checked: The program will enable V(min), V(max) and V(step) settings and perform multiple measurements at
+different bias voltages. The number of measurements is equal to:
+
+        Floor( [V(max) - V(min)]/V(step) )
+
+  The last measurement is at a voltage always lower or equal to V(max) for safety reasons. Whenever V(step) is 0, only one
+measurement will be performed at V(min).
+
+- Surface scan is checked: The program will enable X(min), X(max) and X(step), and Y(min), Y(max) and Y(step) settings and
+perform multiple measurements at different table positions (surface scan). The number of measurements is equal to:
+
+        Floor( [X(max) - X(min)]/X(step) )          Floor( [Y(max) - Y(min)]/Y(step) )
+
+  The last measurement is at a position always smaller or equal to X(max) or Y(max). Whenever X(step) is 0, only one measurement
+will be performed at X(min) and equally in the Y axis direction. By setting one axis step size to 0, only scans along one axis
+are performed (for example for edge scans).
+
+- Z-axis scan is checked: The program will enable Z(min), Z(max) and Z(step) settings and perform multiple measurements at
+different distances between laser optics and the sample (Z axis). The number of measurements is equal to:
+
+        Floor( [Z(max) - Z(min)]/Z(step) )
+
+  The last measurement is at a position always smaller or equal to Z(max). Whenever Z(step) is 0, only one measurement will be
+performed at Z(min).
+
+- Rotation scan is checked: The program will enable Angle(min), Angle(max) and Angle(step) settings and perform multiple
+measurements at different incidence angles (angle away from perpendicular incidence of laser light on the sample). The number
+of measurements is equal to:
+
+        Floor( [Angle(max) - Angle(min)]/Angle(step) )
+
+  The last measurement is at an angle always smaller or equal to Angle(max). Whenever Angle(step) is 0, only one measurement
+will be performed at Angle(min).
+
+Surface scan and Z axis scan can be combined to perform edge scans at different distances between optics and sample (useful
+for finding the focal point of the laser).
+
+_______________________________________
+5b. Temperature chamber considerations:
+
+Whenever using the temperature chamber, be careful about the set temperature. SiPM samples have a specific operational and
+storage temperatures that should not be exceeded. The temperature chamber, however, has slight overshoots when increasing
+the temperature, thus heating slightly above the set temperature (sometimes as much as 5 degrees) and then cooling back down.
+
+The chamber also has some problems cooling after previous heating (ex. coming from 0 degrees to 25 degrees and then again
+cooling the chamber). In this case, it will seem to remain around some temperature, although it is supposed to be cooling
+down. Sometimes this can be solved by turning off the chamber and waiting for some time or by making a large temperature
+jump from higher to lower temperature (taking into consideration the sample temperature range).
+
+Opening the chamber after measurements at low temperatures should be very short, since condensation forms very quickly that
+can then lead to the water droplets freezing at low temperatures. Ideally, the chamber should be warmed close to room
+temperature before opening, but any very short changes to the setup can still be performed when at lower temperatures.
+
+___________________
+5c. Movement table:
+
+The movement tables are controlled by National Aperture MicroMini controllers through a subprogram found in
+$sipmscan/trunk/src/MIKRO. Sometimes special measures are needed (in case of problems) that are not available inside the
+sipmscan software, but can be achieved by going directly to the subprogram. The subprogram can be run, by going directly
+to its directory and running:
+
+        ./mikro_ctrl [arguments]
+
+The arguments can be (only running ./mikro_ctrl will bring up help information):
+- Node select: -n [node nr]. The [nodenr] is the address number of the controller as set on the front of the MicroMini
+controller.
+- Initialize node: -i [init type]. The [inittype] is the initialization type that can be 3M Linear (1), 3M Rotational (2),
+4M Linear (3) or 4M Rotational (4). 3M are the smaller/shorter versions, while 4M are the larger/longer versions (all three
+axis are 4M Linear and the angle is 3M Rotational). Always needs the node select argument (-n).
+- Node homing: -h. Sets the node to a predetermined 0 value (home). Always needs the node select argument (-n). IMPORTANT: The
+rotational table must never be set to home! It does not have a predetemined zero, so the table will infinitely spin and can
+cause harm to the sample or attached cables.
+- Reset node: -r. Does a complete reset of the controller. Always needs the node select argument (-n). After reset, the
+controller needs to be initialized in order to work properly.
+- Node status: -a. Returns the current status of the controller. Can be used with node select argument (-n) to target specific
+controller or without to display status from all.
+- Node position: -p. Returns the current position of the controller. Always needs the node select argument (-n).
+- Node get command: -g [command]. Get return value from the issued command. Always needs the node select argument (-n). For
+possible commands, see the MicroMini user manual.
+- Node set command: -v [value] -s [command]. Set a value with an issued command. Always needs the node select argument (-n).
+For possible commands and values, see the MicroMini user manual.
+- Custom node command: -c [command]. Run one of the node commands without setting a value. Always needs the node select
+argument (-n). For possible commands and values, see the MicroMini user manual.
+
+Example commands:
+- Reset node 1:
+     ./mikro_ctrl -n 1 -r
+- Initialize node 2 as a 4M Linear type:
+     ./mikro_ctrl -n 2 -i 3
+- Home node 3:
+     ./mikro_ctrl -n 3 -h
+- Determine node 1 position:
+     ./mikro_ctrl -n 1 -p
+- Prepare to move node 2 to an absolute position of 1000 and move it:
+     ./mikro_ctrl -n 2 -v 500 -s la
+     ./mikro_ctrl -c m
+- Prepare to move node 3 relative to current position for -500 and move it:
+     ./mikro_ctrl -n 2 -v -500 -s lr
+     ./mikro_ctrl -c m
+- Abort the current movement of node 4:
+     ./mikro_ctrl -n 4 -c ab
+
+Documentation:
+- MicroMini controller manual: http://www-f9.ijs.si/~rok/detectors/oprema/national_aperture_stages/MicroMini_Manual.pdf
+- 4M Linear table: http://www.naimotion.com/mm4mex.htm
+- 3M Rotational table: http://www.naimotion.com/mm3mr.htm
+
+________________________
+5d. Bias voltage supply:
+
+The bias voltage is supplied by the MPOD HV & LV power supply system through a subscript found in $sipmscan/trunk/src/mpod
+(using the snmp software). Sometimes special measures are needed (in case of problems) that are not available inside the
+sipmscan software, but can be achieved by going directly to the subprogram. The subprogram can be run, by going directly to
+its directory and running:
+
+        ./mpod_voltage.sh [arguments]
+
+The arguments can be:
+- Reset all output channels: --resetall
+- Reset a selected output channel: -r [channel]
+- Selects an output channel: -o [channel]
+- Sets the output channel voltage: -v [voltage]
+- Turns the output on/off: -s [0/1]
+- Get the current output channel voltage: -g
+
+Example commands:
+- Get the set bias voltage on channel 1 (U0):
+     ./mpod_voltage.sh -o 1 -g
+- Turn the bias voltage off on channel 2 (U1):
+     ./mpod_voltage.sh -o 2 -s 0
+- Turn the bias voltage on and set it to 24.5V on channel 1 (U0):
+     ./mpod_voltage.sh -o 1 -v 24.5 -s 1
+- Reset channel 2 (U1):
+     ./mpod_voltage.sh -o 2 -r
+
+In its complete state, the command used in the script mpod_voltage.sh for setting for example an output voltage of 24.5 to
+channel 1 (U0):
+     snmpset -v 2c -M +. -m +WIENER-CRATE-MIB -c guru [IP address] outputVoltage.1 F 24.5 
+
+Documentation:
+- Net-SNMP: http://www.net-snmp.org/docs/man/
+- MPOD: http://file.wiener-d.com/documentation/MPOD/Manual_MPOD_LV-HV_2.9.pdf
+
+==========================
+= 6. Measurement files ===
+==========================
+
+The measurement files, used for saving results, are constructed in native ROOT format to increase the read/write speeds while
+reading and saving data.
+________________________
+6a. ROOT file structure:
+
+The output ROOT files are structured in this way:
+
+        ROOT file (TFile)
+         |
+         |== header_data (TTree): Header information (same for all events)
+         |    |
+         |    |== nrch (TBranch): Number of channels (ADC + TDC channels)
+         |    |== timestamp (TBranch): Unix timestamp for start of measurement
+         |    |== biasvolt (TBranch): Measurement bias voltage
+         |    |== xpos (TBranch): X axis position in table units
+         |    |== ypos (TBranch): Y axis position in table units
+         |    |== zpos (TBranch): Z axis position in table units
+         |    |== temperature (TBranch): Chamber temperature
+         |    |== angle (TBranch): Incidence angle of measurement
+         |    |== laserinfo (TBranch): Additional info for measurement
+         |
+         |== meas_data (TTree): Measured values from ADC and TDC (all events)
+         |    |
+         |    |== ADC0 (TBranch): All events from ADC channel 0 saved in order
+         |    |== TDC0 (TBranch): All events from TDC channel 0 saved in order
+         |    |== ADC1 (TBranch): All events from ADC channel 1 saved in order
+         |    |== TDC1 (TBranch): All events from TDC channel 1 saved in order
+         |    |== ... (TBranch): Additional channels up to 8 (0-7) in total
+         |
+         |== scope_data (TTree, optional): Measured values from the oscilloscope
+              |
+              |== measdata (TBranch): Currently in development
+
+
+The easiest way to get the data is to create structures:
+
+        struct EventHeader {
+          int nrch;
+          int timestamp;
+          double biasvolt;
+          int xpos;
+          int ypos;
+          int zpos;
+          double temperature;
+          double angle;
+          char laserinfo[256];
+        } evtheader;
+
+        struct EventData {
+          int adcdata[8];
+          int tdcdata[8];
+        } evtdata;
+
+        struct EventMeas {
+          double measdata;
+        } evtmeas;
+
+
+Then opening the file:
+
+        TFile* inputfile = TFile::Open("filename.root","READ");
+
+Then getting separate information:
+- for instance for reading the bias voltage from header:
+
+        TTree* sometree;
+        inputfile->GetObject("header_data", sometree);
+        sometree->SetBranchAddress("biasvolt", &evtheader.biasvolt);
+        sometree->GetEntry(0);
+
+- for instance for reading all ADC and TDC events in a file from channel 1 (ADC0):
+
+        TTree* sometree;
+        inputfile->GetObject("meas_data", sometree);
+        char selectedCh[256];
+        for(int i = 0; i < sometree->GetEntries(); i++)
+        {
+          sprintf(selectedCh, "ADC%d", 0);
+          sometree->SetBranchAddress(selectedCh, &evtdata.adcdata[i]);
+          sometree->GetEntry(i);
+
+          sprintf(selectedCh, "TDC%d", 0);
+          sometree->SetBranchAddress(selectedCh, &evtdata.tdcdata[i]);
+          sometree->GetEntry(i);
+        }
+
+______________________________
+6b. Opening measurement files:
+
+The sipmscan software has internal handling for saving and opening measurement files. To open these files for an analysis, use
+the File selection button in the Histogram file selection window (Analysis tab). Once the file or files are opened, it is possible
+to double click a file on the list to display its histogram. The histogram can then be manipulated by changing ADC or TDC ranges,
+or changing the type of displayed histogram (ADC, TDC ADC versus TDC).
+
+Each of the selected files has a display of its header below the file list in order to quickly determine at what conditions and
+when this measurement was taken. If there are any problems with the header, modifications can be performed with the Edit header
+button.
+
+After that analysis on the measurements can be performed, based on the selected ranges for ADC and TDC (note that each measured
+event has a ADC and TDC channel value saved to the file).
+
+=================
+= 7. Analysis ===
+=================
+
+The sipmscan software already includes a number of analysis options:
+- Plotting ADC (Analog-to-Digital Converter) spectrum, TDC (Time-to-Digital Converter) spectrum and ADC versus TDC 2D plots.
+- Fitting of ADC spectrum photon equivalent peaks.
+- ADC spectrum integration: Single or along X or Y directions (for edge scans).
+- Relative Photon Detection Efficiency: Efficiency of sample relative to incidence angle.
+- Breakdown voltage: Determination of silicon detector breakdown voltage through ADC spectrum photon peak separation (gain).
+- Surface scan: Production of a 2D plot by integrating the ADC spectrum in each laser position.
+
+Still to come...
+
+===================
+= 8. Change log ===
+===================
+
+5.10.2016 (Current Rev)
+a) Fixed a couple of bugs and layout positions.
+b) Added settings files for measurement and analysis settings. With this, everytime a new measurement or a new analysis is
+ran, the selected settings are saved to a file. This way, if the program crashes, the selected settings will be automatically
+filled in.
+
+30.9.2016 (Rev 172):
+a) Fixed the time estimation for surface and Z-axis scans (TimeEstimateNew).
+b) Did the same as c) in the previous revision, but separately for opening histogram files and for selecting the measurement
+output file.
+c) Added an Emergency stop button to the movement of the table - just in case a wrong value is inserted and there is something
+in the way.
+d) Added a way to integrate the surface scan, when using the "Start and Edit" option. This can be useful for determining the
+angular dependence of the light passing onto a complete camera pixel.
+
+11.8.2016 (Rev 167):
+a) When using breakdown voltage or relative PDE analysis and with only one file selected, the analysis is stopped and the fit
+is displayed on the graph. This makes it easier to setup fitting settings.
+b) Added the possibility to export plots created through analysis ("Start and edit" option).
+c) Everytime, when opening a histogram file, the following open and save dialog windows automatically open up in that directory.
+This makes it easier to find the directory that was used last.
+d) Added a dropdown list to the Analysis tab, so that it is possible to set position units for plots (table units or microns).
+e) Normalization to a maximum of 1 now works for surface scans.
+
+4.4.2016 (Rev 146):
+a) Complete restructure of the program, so that it now runs seperately, not through ROOT (libraries are constructed pre-run).
+Program is now split into multiple tabs for easier use, three of which are Measurement, Analysis and Help.
+b) Added support for relative PDE measurements with included sample rotation table.
+c) Improvement of analysis part of the program (includes ADC spectrum integration, breakdown voltage characterization, surface
+scans, relative PDE characterization,...).
+d) Added tooltips for different parts of the program for quick reference. Use them by hovering over any text entries, number
+entries, check boxes or buttons.
+e) Connection to temperature data and oscilloscope currently under development.
+f) Older version of program moved to https://f9pc00.ijs.si/svn/f9daq/lab/sipmscan/trunk_v0.9 and will no longer be in development.
+
+17.7.2015 (Rev 129):
+a) Fixed a problem with ADC peak fitting (peak fitting returning a segmentation fault).
+b) Added support to edit file headers (in case, some were created at an older date and did not include some header information or
+there was a mistake in writing them).
+c) Temperature data can only be retrieved when connected to the IJS network (IP = 178.172.43.xxx) and is disabled otherwise.
+d) The relative PDE measurement now takes the incidence angle value directly from input files.
+e) Currently, data acquisition only works on 32bit computers.
+f) Fixed issue with program not correctly writting multiple channels.
+
+5.5.2015 (Rev 128):
+a) Added a header display for opened files in the histogram file selection window. This enables a quicker view of the measurement
+information.
+b) Added an incidence angle input to be able to save sample rotation angle to headers of files.
+c) Added support for the fieldpoint temperature sensor (FP RTD 122). Can now plot and export data from the sensor for a specific
+channel and specific time range. For now, this option only works if the PC you are using this program on is connected to an
+internet/ethernet connection at IJS.
+d) Added a limited relative PDE analysis option. At this time, it takes the selected files and calculates the PDE, relative to
+the first selected file. The first file should be measured at incidence angle 0, with others having an incidence angle shift of
++15 (1st file -> 0, 2nd file -> 15, 3rd file -> 30,...).
+
+9.4.2015 (Rev 127):
+a) Added communications panel for connecting to a Tektronix scope.
+b) Added limited support for waveform analysis with a Tektronix scope. For now, it only works when linking it to CAMAC acquisition.
+c) Added a manual chamber temperature entry field.
+
+16.3.2015 (Rev 117):
+a) First version of sipmscan.
+b) Added support for CAMAC, bias voltage settings and table position settings.
+c) Added support for opening measured histograms.
+d) Added support for analysis:
+   - making surface plots
+   - fitting the ADC spectrum
+   - creating breakdown voltage plots
+   - integrating the ADC spectrum with changing X or Y direction (edge scans)

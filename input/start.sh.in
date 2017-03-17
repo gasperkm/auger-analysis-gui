@@ -1,0 +1,19 @@
+if [ $rootdirectory != -1 ]; then
+  printenv ROOTSYS  > /dev/null
+  if [ $? != 0 ]; then
+    echo "Preparing ROOT..."
+    source $rootdirectory/bin/thisroot.sh
+  fi
+fi
+
+if [ ! -d results ]; then
+  mkdir results
+fi
+
+if [ "$1" == "old" ]; then
+  ./bin/auger-analysis-gui-old
+elif [ "$1" == "new" ]; then
+  ./bin/auger-analysis-gui-new
+else
+  echo "Error! No offline version supplied. Please use old or new."
+fi

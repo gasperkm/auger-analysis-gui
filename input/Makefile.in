@@ -102,7 +102,7 @@ tmvagui: $(SRC)/root_mva/TMVAGui.C
 # Rules for cleaning the installation
 clean:
 	@echo "# Cleaning the installation directory -------------------------"
-	rm -fr $(DICT)/*Dict.C $(DICT)/*Dict.h $(BIN) $(LDIR) start.sh *.o $(SRC)/*.o
+	rm -fr $(DICT)/*Dict.C $(DICT)/*Dict.h $(DICT)/*DictOld.C $(DICT)/*DictOld.h $(DICT)/*DictNew.C $(DICT)/*DictNew.h $(BIN) $(LDIR) start.sh *.o $(SRC)/*.o
 	rm -fr $(IDIR)/workstation.h $(SRC)/daqscope.C $(SRC)/daqusb.C $(DBG)/finish_sig.txt
 	rm -fr $(SRC)/root_mva/plotsdir.h $(SRC)/root_mva/plots/* $(SRC)/root_mva/*.d $(SRC)/root_mva/*.so
 

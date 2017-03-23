@@ -990,7 +990,7 @@ void TGAppMainFrame::PickObservables(int pos)
 void TGAppMainFrame::StartMvaAnalysis(int opt)
 {
    char ctemp[1024];
-   string stemp;
+   string stemp, stemp2;
    int ret = -1;
 
    // Start MVA analysis
@@ -1063,29 +1063,93 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 	    }
 	 }
 
-	 stemp = GetTree(0, ifile);
-	 if( stemp == "" )
-	 {
-	    cout << "No signal trees found for MVA analysis." << endl;
-            ifile->Close();
-            delete factory;
-            ofile->Close();
-	    return;
+         int selectedBin[2];
+         selectedBin[0] = (int)cutEnergyBinSelect->widgetCB->GetSelected();
+         selectedBin[1] = (int)cutZenithBinSelect->widgetCB->GetSelected();
+
+         TTree *signalTree;
+         for(int j = 1; j <=(ifile->GetNkeys()-1); j++)
+         {
+            stemp = "TreeS" + IntToStr(j);
+            remove_before_last((char*)ifile->GetKey(stemp.c_str())->GetTitle(), '/', ctemp);
+            if( string(signalSelect->widgetCB->GetSelectedEntry()->GetTitle()) == string(ctemp) )
+            {
+	       if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	       {
+	          cout << "Both energy and zenith cuts are disabled (signal)." << endl;
+	          signalTree = (TTree*)ifile->Get(stemp.c_str());
+	       }
+	       else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	       {
+	          cout << "Both energy and zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	          stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          signalTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+               }
+	       else if(cutEnergy->widgetChBox[0]->IsDown())
+	       {
+	          cout << "Only energy cuts are enabled (signal): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	          stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          signalTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	       }
+	       else if(cutZenith->widgetChBox[0]->IsDown())
+	       {
+	          cout << "Only zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	          stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          signalTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	       }
+	       else
+	          return;
+
+	       break;
+	    }
 	 }
-	 TTree *signalTree = (TTree*)ifile->Get(stemp.c_str());
+
 	 nrTreeEvents[0] = signalTree->GetEntries();
 	 cout << "Number of entries in signal tree = " << nrTreeEvents[0] << endl;
 
-	 stemp = GetTree(1, ifile);
-	 if( stemp == "" )
-	 {
-	    cout << "No background trees found for MVA analysis." << endl;
-            ifile->Close();
-            delete factory;
-            ofile->Close();
-	    return;
+         TTree *backgroundTree;
+         for(int j = 1; j <=(ifile->GetNkeys()-1); j++)
+         {
+            stemp = "TreeS" + IntToStr(j);
+            remove_before_last((char*)ifile->GetKey(stemp.c_str())->GetTitle(), '/', ctemp);
+            if( string(backgroundSelect->widgetCB->GetSelectedEntry()->GetTitle()) == string(ctemp) )
+            {
+	       if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	       {
+	          cout << "Both energy and zenith cuts are disabled (background)." << endl;
+	          backgroundTree = (TTree*)ifile->Get(stemp.c_str());
+	       }
+	       else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	       {
+	          cout << "Both energy and zenith cuts are enabled (background): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	          stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          backgroundTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+               }
+	       else if(cutEnergy->widgetChBox[0]->IsDown())
+	       {
+	          cout << "Only energy cuts are enabled (background): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	          stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          backgroundTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	       }
+	       else if(cutZenith->widgetChBox[0]->IsDown())
+	       {
+	          cout << "Only zenith cuts are enabled (background): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	          stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	          cout << "Cut setting: " << stemp2 << endl;
+	          backgroundTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	       }
+	       else
+	          return;
+
+	       break;
+	    }
 	 }
-	 TTree *backgroundTree = (TTree*)ifile->Get(stemp.c_str());
+
 	 nrTreeEvents[1] = backgroundTree->GetEntries();
 	 cout << "Number of entries in background tree = " << nrTreeEvents[1] << endl;
 
@@ -1264,9 +1328,38 @@ cout << "MVA method: " << mvamethod << endl;
          for(int j = 1; j <= (ifile->GetNkeys()-1); j++)
          {
             stemp = "TreeS" + IntToStr(j);
-cout << endl << stemp << " has been selected for evaluation." << endl;
+            cout << endl << stemp << " has been selected for evaluation." << endl;
 
-            TTree *signalapp = (TTree*)ifile->Get(stemp.c_str());
+	    TTree *signalapp;
+
+	    if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are disabled (application)." << endl;
+	       signalapp = (TTree*)ifile->Get(stemp.c_str());
+	    }
+	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+            }
+	    else if(cutEnergy->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only energy cuts are enabled (application): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutZenith->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	    }
+	    else
+	       return;
 
 	    for(int i = 0; i < nrobs; i++)
 	    {
@@ -1277,12 +1370,8 @@ cout << endl << stemp << " has been selected for evaluation." << endl;
 	       else if(observablesCheck[i] == 3)	// mean + pos error
 	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);
 	    }
-
-	    // Add the FD energy observable, so we can set an energy limit
-	    float fdenergyVal;
-	    signalapp->SetBranchAddress("fdenergy", &fdenergyVal);
             
-            CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j, &fdenergyVal);
+            CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j);
          }
 
 	 for(int j = ifile->GetNkeys(); j < 6; j++)
@@ -1350,6 +1439,10 @@ cout << "Selected observable: " << observables[i]+"_pos" << endl;
 	    }
 	 }
 
+         int selectedBin[2];
+         selectedBin[0] = (int)cutEnergyBinSelect->widgetCB->GetSelected();
+         selectedBin[1] = (int)cutZenithBinSelect->widgetCB->GetSelected();
+
          // Book the MVA with the produced weights file
          stemp = string(currentAnalysisDir) + "/weights/TMVAClassification_" + applymva + ".weights.xml";
 cout << "Weights file: " << stemp << endl;
@@ -1363,9 +1456,38 @@ cout << "MVA method: " << mvamethod << endl;
          for(int j = 1; j <= (ifile->GetNkeys()-1); j++)
          {
             stemp = "TreeS" + IntToStr(j);
-cout << endl << stemp << " has been selected for evaluation." << endl;
+            cout << endl << stemp << " has been selected for evaluation." << endl;
 
-            TTree *signalapp = (TTree*)ifile->Get(stemp.c_str());
+	    TTree *signalapp;
+
+	    if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are disabled (application)." << endl;
+	       signalapp = (TTree*)ifile->Get(stemp.c_str());
+	    }
+	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+            }
+	    else if(cutEnergy->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only energy cuts are enabled (application): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutZenith->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
+	    }
+	    else
+	       return;
 
 	    for(int i = 0; i < nrobs; i++)
 	    {
@@ -1376,12 +1498,8 @@ cout << endl << stemp << " has been selected for evaluation." << endl;
 	       else if(observablesCheck[i] == 3)	// mean + pos error
 	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);
 	    }
-
-	    // Add the FD energy observable, so we can set an energy limit
-	    float fdenergyVal;
-	    signalapp->SetBranchAddress("fdenergy", &fdenergyVal);
             
-            CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j, &fdenergyVal);
+            CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j);
          }
 
 	 for(int j = ifile->GetNkeys(); j < 6; j++)
@@ -1490,10 +1608,18 @@ cout << endl << stemp << " has been selected for evaluation." << endl;
    }
 }
 
-string TGAppMainFrame::GetTree(int sigback, TFile *infile)
+/*string TGAppMainFrame::GetTree(int sigback, TFile *infile, TTree *outTree)
 {
-   string stemp;
+   string stemp, stemp2;
    char ctemp[1024];
+
+   int selectedBin[2];
+   selectedBin[0] = (int)cutEnergyBinSelect->widgetCB->GetSelected();
+   selectedBin[1] = (int)cutZenithBinSelect->widgetCB->GetSelected();
+   if( (cutEnergyBins->widgetNE[0]->GetNumber() == 1) && (selectedBin[0] == 0) )
+      selectedBin[0] = 1;
+   if( (cutZenithBins->widgetNE[0]->GetNumber() == 1) && (selectedBin[1] == 0) )
+      selectedBin[1] = 1;
 
    // Get the signal tree
    if(sigback == 0)
@@ -1503,7 +1629,40 @@ string TGAppMainFrame::GetTree(int sigback, TFile *infile)
          stemp = "TreeS" + IntToStr(j);
          remove_before_last((char*)infile->GetKey(stemp.c_str())->GetTitle(), '/', ctemp);
 	 if( string(signalSelect->widgetCB->GetSelectedEntry()->GetTitle()) == string(ctemp) )
+	 {
+	    TTree *oldtree = (TTree*)infile->Get(stemp.c_str());
+	    oldtree->ls();
+	    if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are disabled (signal)." << endl;
+	       outTree = (TTree*)oldtree->CloneTree();
+	    }
+	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutEnergy->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only energy cuts are enabled (signal): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutZenith->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+
+	    cout << "GetTree(): Number of entries in signal tree = " << outTree->GetEntries() << endl;
+	    
             return stemp;
+	 }
       }
    }
    // Get the background tree
@@ -1514,11 +1673,44 @@ string TGAppMainFrame::GetTree(int sigback, TFile *infile)
          stemp = "TreeS" + IntToStr(j);
          remove_before_last((char*)infile->GetKey(stemp.c_str())->GetTitle(), '/', ctemp);
 	 if( string(backgroundSelect->widgetCB->GetSelectedEntry()->GetTitle()) == string(ctemp) )
+	 {
+	    TTree *oldtree = (TTree*)infile->Get(stemp.c_str());
+	    oldtree->ls();
+	    if( !cutEnergy->widgetChBox[0]->IsDown() && !cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are disabled (signal)." << endl;
+	       outTree = (TTree*)oldtree->CloneTree();
+	    }
+	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
+	    {
+	       cout << "Both energy and zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutEnergy->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only energy cuts are enabled (signal): Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
+	       stemp2 = "(fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+	    else if(cutZenith->widgetChBox[0]->IsDown())
+	    {
+	       cout << "Only zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
+	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       cout << "Cut setting: " << stemp2 << endl;
+	       outTree = (TTree*)oldtree->CopyTree(stemp2.c_str());
+	    }
+
+	    cout << "GetTree(): Number of entries in background tree = " << outTree->GetEntries() << endl;
+	    
             return stemp;
+	 }
       }
    }
 
-   return "";
+   return "";*/
 
 /*   string stemp;
    char ctemp[1024];
@@ -1737,8 +1929,8 @@ string TGAppMainFrame::GetTree(int sigback, TFile *infile)
          return NULL;
    }
    else
-      return NULL;*/
-}
+      return NULL;
+}*/
 
 void TGAppMainFrame::BookTheMethod(TMVA::Factory *factory)
 {
@@ -1866,7 +2058,7 @@ void TGAppMainFrame::BookTheMethod(TMVA::Factory *factory)
    }
 }
 
-void TGAppMainFrame::CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree, float *energy)
+void TGAppMainFrame::CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree)
 {
 //cutmva, observables, signalapp, reader, mvamethod, obsvars, signalName
    // Prepare colors for signal, background and MVA cut line
@@ -1956,39 +2148,16 @@ cout << "Current tree = " << curtree << ", Observables size = " << obs.size() <<
 	    if( (observables[i] == obs[cnt]) || ((observables[i]+"_neg") == obs[cnt]) || ((observables[i]+"_pos") == obs[cnt]) )
 	    {
 //cout << "  Event = " << ievt << ": value = " << obsvars[i] << ", observable = " << observables[i] << " (" << obs[cnt] << ")" << endl;
-/*               if( (curtree == dataSelect->widgetCB->GetSelected()) && (cutEnergy->widgetChBox[0]->IsDown()) )
-	       {
-//	          cout << "  Event energy = " << energy[0];
-	          if( (energy[0] > TMath::Power(10, cutEnergy->widgetNE[0]->GetNumber())) && (energy[0] <= TMath::Power(10, cutEnergy->widgetNE[1]->GetNumber())) )
-		  {
-//		     cout << ", INSIDE!" << endl;
-                     if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
-                     {
-                        basesig[cnt]->Fill(obsvars[i]);
-                        sigcount[cnt]++;
-                     }
-                     else
-                     {
-                        baseback[cnt]->Fill(obsvars[i]);
-                        backcount[cnt]++;
-                     }
-		  }
-//		  else
-//		     cout << ", OUTSIDE!" << endl;
-	       }
-	       else
-	       {*/
-                  if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
-                  {
-                     basesig[cnt]->Fill(obsvars[i]);
-                     sigcount[cnt]++;
-                  }
-                  else
-                  {
-                     baseback[cnt]->Fill(obsvars[i]);
-                     backcount[cnt]++;
-                  }
-//	       }
+               if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
+               {
+                  basesig[cnt]->Fill(obsvars[i]);
+                  sigcount[cnt]++;
+               }
+               else
+               {
+                  baseback[cnt]->Fill(obsvars[i]);
+                  backcount[cnt]++;
+               }
 
                cnt++;
 	    }
@@ -1996,35 +2165,16 @@ cout << "Current tree = " << curtree << ", Observables size = " << obs.size() <<
          else if(cnt == obs.size())
          {
 //cout << "  MVA Event = " << ievt << ": value = " << reader->EvaluateMVA(mvamethod) << ", observable = " << "MVA" << endl;
-/*            if( (curtree == dataSelect->widgetCB->GetSelected()) && (cutEnergy->widgetChBox[0]->IsDown()) )
-	    {
-	       if( (energy[0] > TMath::Power(10, cutEnergy->widgetNE[0]->GetNumber())) && (energy[0] <= TMath::Power(10, cutEnergy->widgetNE[1]->GetNumber())) )
-	       {
-                  if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
-                  {
-                     basesig[cnt]->Fill(reader->EvaluateMVA(mvamethod));
-                     sigcount[cnt]++;
-                  }
-                  else
-                  {
-                     baseback[cnt]->Fill(reader->EvaluateMVA(mvamethod));
-                     backcount[cnt]++;
-                  }
-	       }
-	    }
-	    else
-	    {*/
-               if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
-               {
-                  basesig[cnt]->Fill(reader->EvaluateMVA(mvamethod));
-                  sigcount[cnt]++;
-               }
-               else
-               {
-                  baseback[cnt]->Fill(reader->EvaluateMVA(mvamethod));
-                  backcount[cnt]++;
-               }
-//	    }
+            if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
+            {
+               basesig[cnt]->Fill(reader->EvaluateMVA(mvamethod));
+               sigcount[cnt]++;
+            }
+            else
+            {
+               baseback[cnt]->Fill(reader->EvaluateMVA(mvamethod));
+               backcount[cnt]++;
+            }
 
             cnt++;
          }

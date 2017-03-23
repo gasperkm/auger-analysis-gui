@@ -57,7 +57,7 @@ void TMVAGui( const char* fName = "../tmva_output.root" )
    TString curMacroPath(gROOT->GetMacroPath());
    // uncomment next line for macros submitted to next root version
 //   gROOT->SetMacroPath(curMacroPath+":./:$ROOTSYS/tmva/test/:");
-   gROOT->SetMacroPath(curMacroPath+":/data0/gkukec/private/programiranje/auger-analysis-gui/src:");
+   gROOT->SetMacroPath(curMacroPath+":/data0/gkukec/private/github/auger-analysis-gui/src:");
    
    // for the sourceforge version, including $ROOTSYS/tmva/test in the
    // macro path is a mistake, especially if "./" was not part of path

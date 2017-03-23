@@ -782,23 +782,97 @@ int AdstMva::GetEyeLongestTrack()
 {
    cout << "# Entering function AdstMva::GetEyeLongestTrack()..." << endl;
    double longtrack = 0.0;
-   int itemp;
-
-   itemp = -1;
+   double xmaxerr = 1000.;
+   double chi2ndf = 0.0;
+   int best[acteyes.size()];
+   int noisy[acteyes.size()];
+   int itemp[] = {-1,-1,-1,-1};
+   bool noisecol = true;
+   int retval = -1;
 
    for(int i = 0; i < acteyes.size(); i++)
    {
-      cout << "Current track length: " << (acteyes[i].GetFdRecShower()).GetTrackLength() << endl;
-      if( (acteyes[i].GetFdRecShower()).GetTrackLength() > longtrack )
+      best[i] = 0;
+      noisy[i] = 0;
+
+      cout << i << ": Event type: " << acteyes[i].GetEventType() << ", ";
+      cout << "Event class: " << acteyes[i].GetEventClass() << ", ";
+      cout << "Current track length: " << (acteyes[i].GetFdRecShower()).GetTrackLength() << ", ";
+      cout << "Current track Xmax error: " << (acteyes[i].GetFdRecShower()).GetXmaxError() << ", ";
+//      cout << "Current track Cher. Fraction: " << (acteyes[i].GetFdRecShower()).GetCherenkovFraction() << ", ";
+      cout << "Current track GH Chi2/Ndf: " << (acteyes[i].GetFdRecShower()).GetGHChi2() << "/" << (acteyes[i].GetFdRecShower()).GetGHNdf() << " (" << (double)((acteyes[i].GetFdRecShower()).GetGHChi2())/((acteyes[i].GetFdRecShower()).GetGHNdf()) << ")" << endl;
+
+      if( (acteyes[i].GetFdRecShower()).GetTrackLength() >= longtrack )
       {
-         itemp = i;
+         itemp[0] = i;
          longtrack = (acteyes[i].GetFdRecShower()).GetTrackLength();
+      }
+
+      if( (acteyes[i].GetFdRecShower()).GetXmaxError() <= xmaxerr )
+      {
+         itemp[1] = i;
+         xmaxerr = (acteyes[i].GetFdRecShower()).GetXmaxError();
+      }
+
+      if( (double)((acteyes[i].GetFdRecShower()).GetGHChi2())/((acteyes[i].GetFdRecShower()).GetGHNdf()) >= chi2ndf )
+      {
+         itemp[2] = i;
+         chi2ndf = (double)((acteyes[i].GetFdRecShower()).GetGHChi2())/((acteyes[i].GetFdRecShower()).GetGHNdf());
+      }
+
+      if( acteyes[i].GetEventClass() == "'Noise'" )
+         noisy[i] = 1;
+   }
+
+   for(int i = 0; i < acteyes.size(); i++)
+   {
+      noisecol = true;
+
+      // Longest track
+      if(itemp[0] == i)
+         best[i]++;
+      // Smallest Xmax error
+      if(itemp[1] == i)
+         best[i]++;
+      // Longitudinal fit - Chi2/Ndf closest to 1
+      if(itemp[2] == i)
+         best[i]++;
+
+      // Event is not classified as Noise (prefer actual shower events)
+      if(noisy[i] == 0)
+         best[i]++;
+      else
+      {
+         if(acteyes.size() > 1)
+	 {
+	    // Checking to see if all eyes are classified as Noise (if yes, disregard Noise for selection)
+	    for(int j = 0; j < acteyes.size(); j++)
+	    {
+	       cout << j << ": noisecol = " << (int)noisecol << ", noisy[j] = " << noisy[j] << ", noisecol && noisy[j] " << (int)(noisecol && noisy[j]) << endl;
+               noisecol = noisecol && noisy[j];
+	    }
+
+	    if( (!noisecol) && (noisy[i] == 1) )
+	       best[i] = 0;
+	 }
+      }
+      
+      cout << "Eye " << i << ": FD best values = " << best[i] << endl;
+   }
+
+   for(int i = 0; i < acteyes.size(); i++)
+   {
+      if(TMath::MaxElement(acteyes.size(), best) == best[i])
+      {
+         retval = i;
+	 break;
       }
    }
    
-   cout << "The longest track is " << longtrack << endl;
+//   cout << "The longest track is " << longtrack << endl;
+   cout << "The highest quality track is " << retval << " (" << itemp[0] << "," << itemp[1] << "," << itemp[2] << " = " << TMath::MaxElement(acteyes.size(), best) << ")" << endl;
 
-   return itemp;
+   return retval;
 }
 
 void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **sig, Observables **all, double frac)

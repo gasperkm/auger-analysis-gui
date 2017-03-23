@@ -388,8 +388,8 @@ public:
    void CheckBothBins();
    void StartMvaAnalysis(int opt);
    void BookTheMethod(TMVA::Factory *factory);
-   string GetTree(int sigback, TFile *infile);
-   void CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree, float *energy);
+//   string GetTree(int sigback, TFile *infile, TTree *outtree);
+   void CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree);
    void SetupBinning(std::string obs, float *limit);
    void SetupAxis(TH1F *hist, string obs);
 

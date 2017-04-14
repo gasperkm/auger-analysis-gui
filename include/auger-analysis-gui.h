@@ -223,6 +223,10 @@ public:
    int nrTreeEvents[2];
    string outputMvaName;
    string applymva;
+   // GKM TODO
+   vector<double> statsMin;
+   vector<double> statsMax;
+   // GKM TODO
 
    // Substructures for Cuts layout
    TSubStructure *configFile;

@@ -1,11 +1,3 @@
-if [ $rootdirectory != -1 ]; then
-  printenv ROOTSYS  > /dev/null
-  if [ $? != 0 ]; then
-    echo "Preparing ROOT..."
-    source $rootdirectory/bin/thisroot.sh
-  fi
-fi
-
 if [ ! -d results ]; then
   mkdir results
 fi

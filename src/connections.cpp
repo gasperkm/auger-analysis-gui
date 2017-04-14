@@ -990,6 +990,8 @@ void TGAppMainFrame::PickObservables(int pos)
 void TGAppMainFrame::StartMvaAnalysis(int opt)
 {
    char ctemp[1024];
+   double dtemp;
+   int itemp;
    string stemp, stemp2;
    int ret = -1;
 
@@ -1240,6 +1242,34 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
          delete factory;
          ofile->Close();
 
+	 // GKM TODO
+	 // Check the stats used for the MVA training from file ./results/transformation_stats.dat and save them to vectors
+	 sprintf(ctemp, "%s/results/transformation_stats.dat", rootdir);
+	 ifstream fstats;
+	 fstats.open(ctemp);
+	 if(fstats.is_open())
+	 {
+            if(fstats.peek() == '#')
+	       fstats.getline(ctemp, 1024, '\n');
+	    for(int i = 0; i < nrobs; i++)
+	    {
+               if(observablesCheck[i] > 0)
+	       {
+		  cout << "Stats for " << observables[i] << ": ";
+	          fstats >> dtemp >> dtemp;	// Mean and RMS of the testing distribution
+	          fstats >> dtemp;		// Minimum of the testing distribution
+	          statsMin.push_back(dtemp);
+		  cout << dtemp << ", ";
+	          fstats >> dtemp;		// Maximum of the testing distribution
+	          statsMax.push_back(dtemp);
+		  cout << dtemp << endl;
+	          fstats.ignore(1, '\n');
+	       }
+	    }
+	 }
+	 fstats.close();
+	 // GKM TODO
+
 	 startMvaAnalysis->widgetTB[1]->SetState(kButtonUp);
 
          sigBackLabel->SetText(("MVA analysis results for all trees (" + IntToStr(nrTreeEvents[0]) + " signal vs. " + IntToStr(nrTreeEvents[1]) + " background):                                              ").c_str());
@@ -1256,14 +1286,6 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 
 	    ret = 1;
 	    cutDialog = new TGDialogFrame(gClient->GetRoot(), fMain, 400, 200, cutMva, &ret);
-
-/*            if( ret == kMBOk )
-	    {
-	       specialMva->widgetChBox[0]->SetState(kButtonUp);
-	       return;
-	    }
-	    else if(ret == kMBCancel)
-	       return;*/
 
 	    if(ret != 0)
 	       return;
@@ -1361,14 +1383,24 @@ cout << "MVA method: " << mvamethod << endl;
 	    else
 	       return;
 
+            itemp = 0;
+
 	    for(int i = 0; i < nrobs; i++)
 	    {
-	       if(observablesCheck[i] == 1)		// mean
+	       if(observablesCheck[i] > 0)
+	       {
+		  cout << "Setting observable " << observables[i] << endl;
+	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[3*itemp]);			// mean
+	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[3*itemp+1]);		// mean + neg error
+	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[3*itemp+2]);		// mean + pos error
+		  itemp++;
+	       }
+/*	       if(observablesCheck[i] == 1)		// mean
 	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[i]);
 	       else if(observablesCheck[i] == 2)	// mean + neg error
 	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[i]);
 	       else if(observablesCheck[i] == 3)	// mean + pos error
-	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);
+	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);*/
 	    }
             
             CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j);
@@ -1489,14 +1521,24 @@ cout << "MVA method: " << mvamethod << endl;
 	    else
 	       return;
 
+            itemp = 0;
+
 	    for(int i = 0; i < nrobs; i++)
 	    {
-	       if(observablesCheck[i] == 1)		// mean
+	       if(observablesCheck[i] > 0)
+	       {
+		  cout << "Setting observable " << observables[i] << endl;
+	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[3*itemp]);			// mean
+	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[3*itemp+1]);		// mean + neg error
+	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[3*itemp+2]);		// mean + pos error
+		  itemp++;
+	       }
+/*	       if(observablesCheck[i] == 1)		// mean
 	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[i]);
 	       else if(observablesCheck[i] == 2)	// mean + neg error
 	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[i]);
 	       else if(observablesCheck[i] == 3)	// mean + pos error
-	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);
+	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[i]);*/
 	    }
             
             CreateMVAPlots(signalapp, reader, mvamethod, obsvars, stemp, j);
@@ -2139,6 +2181,9 @@ cout << "Current tree = " << curtree << ", Observables size = " << obs.size() <<
    for(int ievt = 0; ievt < app->GetEntries(); ievt++)
    {
       app->GetEntry(ievt);
+      cout << "Entry printout " << ievt << ":" << endl;
+      for(int j = 0; j < 3*obs.size(); j++)
+         cout << "j = " << j << ": observable value = " << obsvars[j] << endl;
       cnt = 0;
 
       for(int i = 0; i <= nrobs; i++)

@@ -194,6 +194,21 @@ else
 	 cd $ADSTROOT
 	 make
       fi
+
+      # Create the external TMVA version
+      source $startdir/setup/setup_TMVA.sh $startdir
+      if [ ! -d $TMVASYS ]; then
+         cd $startdir/setup
+         for ball in *.tgz
+         do
+            tar -zxf $ball
+         done
+      fi
+      cd $TMVASYS
+      make
+      if [ $? == 0 ]; then
+         source $TMVASYS/test/setup.sh $TMVASYS
+      fi
    
       if [ $ver == 2 ]; then
         cd $startdir
@@ -212,6 +227,19 @@ else
         echo "fi" >> $startdir/start.sh
         echo "" >> $startdir/start.sh
         echo "rootdirectory=$rootdirectory" >> $startdir/start.sh
+        echo "" >> $startdir/start.sh
+        echo "if [ \$rootdirectory != -1 ]; then" >> $startdir/start.sh
+        echo "  printenv ROOTSYS > /dev/null" >> $startdir/start.sh
+        echo "  if [ \$? != 0 ]; then" >> $startdir/start.sh
+        echo "    echo \"Preparing ROOT...\"" >> $startdir/start.sh
+        echo "    source \$rootdirectory/bin/thisroot.sh" >> $startdir/start.sh
+        echo "  fi" >> $startdir/start.sh
+        echo "fi" >> $startdir/start.sh
+        echo "" >> $startdir/start.sh
+        echo "source $startdir/setup/setup_TMVA.sh $startdir" >> $startdir/start.sh
+	echo "cd $TMVASYS" >> $startdir/start.sh
+	echo "source $TMVASYS/test/setup.sh $TMVASYS" >> $startdir/start.sh
+        echo "cd $startdir" >> $startdir/start.sh
         echo "" >> $startdir/start.sh
         cat $startdir/input/start.sh.in >> $startdir/start.sh
         chmod ug+x $startdir/start.sh

@@ -151,6 +151,7 @@ void draw_network( TFile* f, TDirectory* d, const TString& hName = "weights_hist
       delete c;
    }
    else {
+//      TString fname = "plots/network";
       TString fname = string(PLOTSDIR) + "/network";
       TMVAGlob::imgconv( c, fname );
    }

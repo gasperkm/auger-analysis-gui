@@ -182,7 +182,7 @@ StatDialogBDT::StatDialogBDT( const TGWindow* p, TString wfile, TString methName
 
    fInput->Connect("ValueSet(Long_t)","StatDialogBDT",this, "SetItree()");
 
-   fDrawButton->Connect("ValueSet(Long_t)","TGNumberEntry",fInput, "Clicked()");
+   fDrawButton->Connect("Clicked()","TGNumberEntry",fInput, "ValueSet(Long_t)");
    fDrawButton->Connect("Clicked()", "StatDialogBDT", this, "Redraw()");   
 
    fCloseButton->Connect("Clicked()", "StatDialogBDT", this, "Close()");
@@ -439,6 +439,7 @@ void StatDialogBDT::DrawTree( Int_t itree )
 
 
    fCanvas->Update();
+//   TString fname = Form("plots/%s_%i", fMethName.Data(), itree );
    TString fname = Form("%s/%s_%i", PLOTSDIR, fMethName.Data(), itree );
    cout << "--- Creating image: " << fname << endl;
    TMVAGlob::imgconv( fCanvas, fname );   

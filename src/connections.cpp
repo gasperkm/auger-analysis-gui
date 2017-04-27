@@ -571,6 +571,7 @@ void TGAppMainFrame::UpdateEnergyBinSelect()
    }
 
    cutEnergyBinSelect->widgetCB->Select(1);
+   cutEnergy->widgetChBox[0]->SetState(kButtonDown);
 }
 
 void TGAppMainFrame::UpdateZenithBinSelect()
@@ -603,6 +604,7 @@ void TGAppMainFrame::UpdateZenithBinSelect()
    }
 
    cutZenithBinSelect->widgetCB->Select(1);
+   cutZenith->widgetChBox[0]->SetState(kButtonDown);
 }
 
 void TGAppMainFrame::CheckEnergyBin()
@@ -1243,6 +1245,21 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
          ofile->Close();
 
 	 // GKM TODO
+	 ofile = TFile::Open(file_info.fFilename,"READ");
+
+	 // Get the correlation matrix for all variables
+         itemp = 0;
+         for(int i = 0; i < nrobs; i++)
+         {
+            if(observablesCheck[i] > 0)
+               itemp++;
+         }
+         sigCorMat = new TMatrixD(itemp,itemp);
+         backCorMat = new TMatrixD(itemp,itemp);
+	 GetCorrelations(ofile);
+         ofile->Close();
+	 // GKM TODO
+
 	 // Check the stats used for the MVA training from file ./results/transformation_stats.dat and save them to vectors
 	 sprintf(ctemp, "%s/results/transformation_stats.dat", rootdir);
 	 ifstream fstats;
@@ -1314,6 +1331,8 @@ cout << "Selected MVA method: " << applymva << endl;
 
          float obsvars[3*observables.size()];
 
+         itemp = 0;
+
 	 // Add the observables to the MVA reader
 	 for(int i = 0; i < nrobs; i++)
 	 {
@@ -1322,18 +1341,23 @@ cout << "Selected MVA method: " << applymva << endl;
 	       if(observablesCheck[i] == 1)		// mean
 	       {
 cout << "Selected observable: " << observables[i] << endl;
-	          reader->AddVariable(observables[i], &obsvars[i]);
+	          reader->AddVariable(observables[i], &obsvars[3*itemp]);
+cout << "Tracked variable: obsvars[3*" << itemp << "] = obsvars[" << 3*itemp << "]" << endl;
 	       }
 	       else if(observablesCheck[i] == 2)	// mean + neg error
 	       {
 cout << "Selected observable: " << observables[i]+"_neg" << endl;
-	          reader->AddVariable((observables[i] + "_neg"), &obsvars[i]);
+	          reader->AddVariable((observables[i] + "_neg"), &obsvars[3*itemp+1]);
+cout << "Tracked variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+1 << "]" << endl;
 	       }
 	       else if(observablesCheck[i] == 3)	// mean + pos error
 	       {
 cout << "Selected observable: " << observables[i]+"_pos" << endl;
-	          reader->AddVariable((observables[i] + "_pos"), &obsvars[i]);
+	          reader->AddVariable((observables[i] + "_pos"), &obsvars[3*itemp+2]);
+cout << "Tracked variable: obsvars[3*" << itemp << "+2] = obsvars[" << 3*itemp+2 << "]" << endl;
 	       }
+
+	       itemp++;
 	    }
 	 }
 
@@ -1391,8 +1415,11 @@ cout << "MVA method: " << mvamethod << endl;
 	       {
 		  cout << "Setting observable " << observables[i] << endl;
 	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[3*itemp]);			// mean
+cout << "Mean variable: obsvars[3*" << itemp << "] = obsvars[" << 3*itemp << "]" << endl;
 	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[3*itemp+1]);		// mean + neg error
+cout << "Negerror variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+1 << "]" << endl;
 	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[3*itemp+2]);		// mean + pos error
+cout << "Poserror variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+2 << "]" << endl;
 		  itemp++;
 	       }
 /*	       if(observablesCheck[i] == 1)		// mean
@@ -1448,6 +1475,8 @@ cout << "Selected MVA method: " << applymva << endl;
 
          float obsvars[3*observables.size()];
 
+	 itemp = 0;
+
 	 // Add the observables to the MVA reader
 	 for(int i = 0; i < nrobs; i++)
 	 {
@@ -1456,18 +1485,23 @@ cout << "Selected MVA method: " << applymva << endl;
 	       if(observablesCheck[i] == 1)		// mean
 	       {
 cout << "Selected observable: " << observables[i] << endl;
-	          reader->AddVariable(observables[i], &obsvars[i]);
+	          reader->AddVariable(observables[i], &obsvars[3*itemp]);
+cout << "Tracked variable: obsvars[3*" << itemp << "] = obsvars[" << 3*itemp << "]" << endl;
 	       }
 	       else if(observablesCheck[i] == 2)	// mean + neg error
 	       {
 cout << "Selected observable: " << observables[i]+"_neg" << endl;
-	          reader->AddVariable((observables[i] + "_neg"), &obsvars[i]);
+	          reader->AddVariable((observables[i] + "_neg"), &obsvars[3*itemp+1]);
+cout << "Tracked variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+1 << "]" << endl;
 	       }
 	       else if(observablesCheck[i] == 3)	// mean + pos error
 	       {
 cout << "Selected observable: " << observables[i]+"_pos" << endl;
-	          reader->AddVariable((observables[i] + "_pos"), &obsvars[i]);
+	          reader->AddVariable((observables[i] + "_pos"), &obsvars[3*itemp+2]);
+cout << "Tracked variable: obsvars[3*" << itemp << "+2] = obsvars[" << 3*itemp+2 << "]" << endl;
 	       }
+
+	       itemp++;
 	    }
 	 }
 
@@ -1529,8 +1563,11 @@ cout << "MVA method: " << mvamethod << endl;
 	       {
 		  cout << "Setting observable " << observables[i] << endl;
 	          signalapp->SetBranchAddress((observables[i]).c_str(), &obsvars[3*itemp]);			// mean
+cout << "Mean variable: obsvars[3*" << itemp << "] = obsvars[" << 3*itemp << "]" << endl;
 	          signalapp->SetBranchAddress((observables[i] + "_neg").c_str(), &obsvars[3*itemp+1]);		// mean + neg error
+cout << "Negerror variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+1 << "]" << endl;
 	          signalapp->SetBranchAddress((observables[i] + "_pos").c_str(), &obsvars[3*itemp+2]);		// mean + pos error
+cout << "Poserror variable: obsvars[3*" << itemp << "+1] = obsvars[" << 3*itemp+2 << "]" << endl;
 		  itemp++;
 	       }
 /*	       if(observablesCheck[i] == 1)		// mean
@@ -2100,6 +2137,90 @@ void TGAppMainFrame::BookTheMethod(TMVA::Factory *factory)
    }
 }
 
+void TGAppMainFrame::GetCorrelations(TFile *ofile)
+{
+   TDirectoryFile *corrDir = new TDirectoryFile();
+   corrDir = (TDirectoryFile*)ofile->Get("InputVariables_Id");
+   corrDir = (TDirectoryFile*)corrDir->Get("CorrelationPlots");
+
+   string *stemp;
+   stemp = new string;
+   int *itemp;
+   vector<string> vtemp;
+
+   for(int i = 0; i < nrobs; i++)
+   {
+      if(observablesCheck[i] > 0)
+         vtemp.push_back(observables[i]);
+   }
+
+   itemp = new int[2];
+   itemp[0] = vtemp.size();
+
+   for(int i = 0; i < itemp[0]; i++)
+   {
+      for(int j = i+1; j < itemp[0]; j++)
+      {
+         *stemp = "scat_" + vtemp[j] + "_vs_" + vtemp[i] + "_Signal_Id";
+	 cout << "Signal scatter plot: " << *stemp << " (" << ((TH2F*)corrDir->Get( (*stemp).c_str() ))->GetCorrelationFactor() << ")" << endl;
+         vtemp.push_back(*stemp);
+
+         *stemp = "scat_" + vtemp[j] + "_vs_" + vtemp[i] + "_Background_Id";
+	 cout << "Background scatter plot: " << *stemp << " (" << ((TH2F*)corrDir->Get( (*stemp).c_str() ))->GetCorrelationFactor() << ")" << endl;
+         vtemp.push_back(*stemp);
+      }
+   }
+
+   vtemp.erase(vtemp.begin(), vtemp.begin()+itemp[0]);
+
+
+   for(int i = 0; i < itemp[0]; i++)
+   {
+      for(int j = 0; j < itemp[0]; j++)
+      {
+         if(i == j)
+	 {
+	    (*sigCorMat)(i,i) = 1;
+	    (*backCorMat)(i,i) = 1;
+	 }
+	 else if(i < j)
+	 {
+	    (*sigCorMat)(i,j) = ((TH2F*)corrDir->Get( (vtemp[itemp[1]]).c_str() ))->GetCorrelationFactor();
+	    (*backCorMat)(i,j) = ((TH2F*)corrDir->Get( (vtemp[itemp[1]+1]).c_str() ))->GetCorrelationFactor();
+
+	    (*sigCorMat)(j,i) = ((TH2F*)corrDir->Get( (vtemp[itemp[1]]).c_str() ))->GetCorrelationFactor();
+	    (*backCorMat)(j,i) = ((TH2F*)corrDir->Get( (vtemp[itemp[1]+1]).c_str() ))->GetCorrelationFactor();
+
+	    itemp[1]+=2;
+	 }
+
+      }
+   }
+
+   for(int i = 0; i < itemp[0]; i++)
+   {
+      for(int j = 0; j < itemp[0]; j++)
+      {
+         cout << (*sigCorMat)(i,j) << " | ";
+      }
+      cout << endl;
+   }
+   cout << endl;
+
+   for(int i = 0; i < itemp[0]; i++)
+   {
+      for(int j = 0; j < itemp[0]; j++)
+      {
+         cout << (*backCorMat)(i,j) << " | ";
+      }
+      cout << endl;
+   }
+
+   delete stemp;
+   delete[] itemp;
+   delete corrDir;
+}
+
 void TGAppMainFrame::CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree)
 {
 //cutmva, observables, signalapp, reader, mvamethod, obsvars, signalName
@@ -2121,6 +2242,10 @@ void TGAppMainFrame::CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mva
          obs.push_back(observables[i] + "_pos");
    }
 
+   cout << "Selected observables:" << endl;
+   for(int i = 0; i < obs.size(); i++)
+      cout << "- " << obs[i] << endl;
+
 cout << "Number of events in the tree = " << app->GetEntries() << endl;
    
    // All additional things we need for plotting
@@ -2134,6 +2259,7 @@ cout << "Number of events in the tree = " << app->GetEntries() << endl;
    int legendFill = 1001;
    float yhistlimit[2];
    int cnt;
+   double dtemp;
 
    float *max;
    int *sigcount, *backcount;
@@ -2186,21 +2312,125 @@ cout << "Current tree = " << curtree << ", Observables size = " << obs.size() <<
          cout << "j = " << j << ": observable value = " << obsvars[j] << endl;
       cnt = 0;
 
+      // GKM - Calculate error
+      double *norm1, *norm2;
+      norm1 = new double[3];
+      norm2 = new double[3];
+      covMatNeg = new TMatrixD(obs.size(),obs.size());
+      covMatPos = new TMatrixD(obs.size(),obs.size());
+      eigenValMatNeg = new TMatrixD(obs.size(),obs.size());
+      eigenValMatPos = new TMatrixD(obs.size(),obs.size());
+     
+      cout << "Covariance matrix:" << endl;
+      for(int i = 0; i < obs.size(); i++)
+      {
+	 norm1[0] = ((obsvars[3*i] - statsMin[i])/(statsMax[i] - statsMin[i]))*2 - 1;
+	 norm1[1] = ((obsvars[3*i+1] - statsMin[i])/(statsMax[i] - statsMin[i]))*2 - 1;
+	 norm1[2] = ((obsvars[3*i+2] - statsMin[i])/(statsMax[i] - statsMin[i]))*2 - 1;
+	 cout << "Normalized values (" << obs[i] << "): " << norm1[0] << ", " << norm1[1] << ", " << norm1[2] << endl;
+
+         for(int j = 0; j < obs.size(); j++)
+         {
+	    norm2[0] = ((obsvars[3*j] - statsMin[j])/(statsMax[j] - statsMin[j]))*2 - 1;
+	    norm2[1] = ((obsvars[3*j+1] - statsMin[j])/(statsMax[j] - statsMin[j]))*2 - 1;
+	    norm2[2] = ((obsvars[3*j+2] - statsMin[j])/(statsMax[j] - statsMin[j]))*2 - 1;
+	    cout << "Normalized values (" << obs[j] << "): " << norm2[0] << ", " << norm2[1] << ", " << norm2[2] << endl;
+	    if(signalSelect->widgetCB->GetSelected() == curtree)
+	    {
+               (*covMatNeg)(i,j) = (*sigCorMat)(i,j)*(norm1[0]-norm1[1])*(norm2[0]-norm2[1]);
+               (*covMatPos)(i,j) = (*sigCorMat)(i,j)*(norm1[2]-norm1[0])*(norm2[2]-norm2[0]);
+	       cout << "Signal!" << endl;
+	    }
+	    else if(backgroundSelect->widgetCB->GetSelected() == curtree)
+	    {
+               (*covMatNeg)(i,j) = (*backCorMat)(i,j)*(norm1[0]-norm1[1])*(norm2[0]-norm2[1]);
+               (*covMatPos)(i,j) = (*backCorMat)(i,j)*(norm1[2]-norm1[0])*(norm2[2]-norm2[0]);
+	       cout << "Background!" << endl;
+	    }
+	    else // Still TODO
+	    {
+               (*covMatNeg)(i,j) = (*sigCorMat)(i,j)*(norm1[0]-norm1[1])*(norm2[0]-norm2[1]);
+               (*covMatPos)(i,j) = (*sigCorMat)(i,j)*(norm1[2]-norm1[0])*(norm2[2]-norm2[0]);
+	       cout << "Others!" << endl;
+	    }
+//            cout << (*covMatNeg)(i,j) << " (" << (*sigCorMat)(i,j) << "," << obsvars[3*i]-obsvars[3*i+1] << "," << obsvars[3*j]-obsvars[3*j+1] << ") | ";
+            cout << " | " << (*covMatNeg)(i,j) << " | " << endl;
+
+	    eigenCovMat = new TMatrixDEigen((const TMatrixD)*covMatNeg);
+	    (*eigenValMatNeg) = eigenCovMat->GetEigenValues();
+	    delete eigenCovMat;
+	    eigenCovMat = new TMatrixDEigen((const TMatrixD)*covMatPos);
+	    (*eigenValMatPos) = eigenCovMat->GetEigenValues();
+	    delete eigenCovMat;
+         }
+	 cout << endl;
+      }
+
+      dtemp = 0;
+
+      cout << "Diagonalized matrix (negative error): ";
+      for(int i = 0; i < obs.size(); i++)
+      {
+	 dtemp += TMath::Power((*eigenValMatNeg)(i,i),2);
+         cout << (*eigenValMatNeg)(i,i) << " ";
+      }
+      cout << endl;
+
+      dtemp = TMath::Sqrt(dtemp);
+      cout << "MVA variable error (negative error) = " << dtemp << endl;
+
+      outFile.open((string("mva_error") + IntToStr(curtree) + string(".dat")).c_str(), ofstream::out | ofstream::app);
+      outFile << dtemp << "\t";
+
+      dtemp = 0;
+
+      cout << "Diagonalized matrix (positive error): ";
+      for(int i = 0; i < obs.size(); i++)
+      {
+	 dtemp += TMath::Power((*eigenValMatPos)(i,i),2);
+         cout << (*eigenValMatPos)(i,i) << " ";
+      }
+      cout << endl;
+
+      dtemp = TMath::Sqrt(dtemp);
+      cout << "MVA variable error (positive error) = " << dtemp << endl << endl;
+
+      outFile << dtemp << endl;
+      outFile.close();
+
+      delete covMatNeg;
+      delete covMatPos;
+      delete eigenValMatNeg;
+      delete eigenValMatPos;
+      delete[] norm2;
+      delete[] norm1;
+      // GKM - Calculate error
+
       for(int i = 0; i <= nrobs; i++)
       {
          if(cnt < obs.size())
          {
 	    if( (observables[i] == obs[cnt]) || ((observables[i]+"_neg") == obs[cnt]) || ((observables[i]+"_pos") == obs[cnt]) )
 	    {
-//cout << "  Event = " << ievt << ": value = " << obsvars[i] << ", observable = " << observables[i] << " (" << obs[cnt] << ")" << endl;
+cout << "  Event = " << ievt << ": values = " << obsvars[3*cnt] << ", " << obsvars[3*cnt+1] << ", " << obsvars[3*cnt+2] << ", observable = " << observables[i] << " (" << obs[cnt] << ")" << endl;
                if(reader->EvaluateMVA(mvamethod) >= cutMva->widgetNE[0]->GetNumber())
                {
-                  basesig[cnt]->Fill(obsvars[i]);
+	          if(observables[i] == obs[cnt])
+                     basesig[cnt]->Fill(obsvars[3*cnt]);
+	          else if((observables[i]+"_neg") == obs[cnt])
+                     basesig[cnt]->Fill(obsvars[3*cnt+1]);
+	          else if((observables[i]+"_pos") == obs[cnt])
+                     basesig[cnt]->Fill(obsvars[3*cnt+2]);
                   sigcount[cnt]++;
                }
                else
                {
-                  baseback[cnt]->Fill(obsvars[i]);
+	          if(observables[i] == obs[cnt])
+                     baseback[cnt]->Fill(obsvars[3*cnt]);
+	          else if((observables[i]+"_neg") == obs[cnt])
+                     baseback[cnt]->Fill(obsvars[3*cnt+1]);
+	          else if((observables[i]+"_pos") == obs[cnt])
+                     baseback[cnt]->Fill(obsvars[3*cnt+2]);
                   backcount[cnt]++;
                }
 

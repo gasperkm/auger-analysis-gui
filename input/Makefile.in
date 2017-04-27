@@ -27,7 +27,8 @@ COMPOPT=-fPIC -g -std=c++11
 # Specific variables for the main program
 TARGETOLD=auger-analysis-gui-old
 TARGETNEW=auger-analysis-gui-new
-FILES=$(shell find $(SRC)/ -name "*.cpp")
+#FILES=$(shell find $(SRC)/ -name "*.cpp")
+FILES=$(shell find $(SRC)/ -name "*.cpp" -a ! -name "substructure*")
 HEADER=$(IDIR)/daq.h $(IDIR)/workstation.h $(IDIR)/sipmscan.h $(IDIR)/root_include.h
 #OFFLINELIBS=-lRecEventKG -lAnalysisKG -lAugerEventIO -lAugerFramework -lAugerModules -lAugerTools -lAugerUtilities -lTMVA
 OFFLINELIBS=-lRecEventKG -lAnalysisKG -lTMVA -lMinuit
@@ -51,7 +52,8 @@ $(TARGETOLD): $(FILES) $(LDIR)/libsubstr.so tmvagui
 	if [ ! -d "$(BIN)" ];then  mkdir $(BIN);  fi
 	@echo "\n# Compiling main program ------------------------------------"
 #	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(AUGEROFFLINEROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
-	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+#	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictOld.C $(CPPFLAGS) -o $(BIN)/$(TARGETOLD) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR) -lsubstr
 	@echo "\n# Compilation successful ------------------------------------"
 	@echo "# Use ./start.sh old to run the program -------------------------"
 
@@ -64,7 +66,8 @@ $(TARGETNEW): $(FILES) $(LDIR)/libsubstr.so tmvagui
 	if [ ! -d "$(BIN)" ];then  mkdir $(BIN);  fi
 	@echo "\n# Compiling main program ------------------------------------"
 #	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(AUGEROFFLINEROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
-	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+#	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR)/libsubstr.so
+	$(CXX) $(INC) $(COMPOPT) $(FILES) $(DICT)/GuiDictNew.C $(CPPFLAGS) -o $(BIN)/$(TARGETNEW) -L$(ADSTROOT)/lib $(GRROOTLIB) $(OFFLINELIBS) -lstdc++ -lSpectrum -L$(LDIR) -lsubstr
 	@echo "\n# Compilation successful ------------------------------------"
 	@echo "# Use ./start.sh new to run the program -------------------------"
 # -------------------------------------------------------------------

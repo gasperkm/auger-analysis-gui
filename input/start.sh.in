@@ -2,6 +2,8 @@ if [ ! -d results ]; then
   mkdir results
 fi
 
+export LD_LIBRARY_PATH=$PWD/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+
 if [ "$1" == "old" ]; then
   ./bin/auger-analysis-gui-old
 elif [ "$1" == "new" ]; then

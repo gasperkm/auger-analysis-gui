@@ -226,6 +226,14 @@ public:
    // GKM TODO
    vector<double> statsMin;
    vector<double> statsMax;
+   TMatrixD *sigCorMat;
+   TMatrixD *backCorMat;
+   TMatrixD *covMatNeg;
+   TMatrixD *covMatPos;
+   TMatrixDEigen *eigenCovMat;
+   TMatrixD *eigenValMatNeg;
+   TMatrixD *eigenValMatPos;
+   ofstream outFile;
    // GKM TODO
 
    // Substructures for Cuts layout
@@ -393,6 +401,7 @@ public:
    void StartMvaAnalysis(int opt);
    void BookTheMethod(TMVA::Factory *factory);
 //   string GetTree(int sigback, TFile *infile, TTree *outtree);
+   void GetCorrelations(TFile* ofile);
    void CreateMVAPlots(TTree *app, TMVA::Reader *reader, string mvamethod, float *obsvars, string signalName, int curtree);
    void SetupBinning(std::string obs, float *limit);
    void SetupAxis(TH1F *hist, string obs);

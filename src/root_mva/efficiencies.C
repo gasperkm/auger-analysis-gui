@@ -1,11 +1,7 @@
 #include "plotsdir.h"
 #include "tmvaglob.C"
-#include "TH2F.h"
-#include "TFile.h"
-#include "TIterator.h"
-#include "TKey.h"
 
-void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
+void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir)
 {
    // input:   - Input file (result from TMVA),
    //          - type = 1 --> plot efficiency(B) versus eff(S)
@@ -75,7 +71,7 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
    TIter xnext(&xmethods);
    // loop over all methods
    TKey *xkey;
-   while ((xkey = (TKey*)xnext())) {
+   while (xkey = (TKey*)xnext()) {
       TDirectory * mDir = (TDirectory*)xkey->ReadObj();
       TList titles;
       UInt_t ninst = TMVAGlob::GetListOfTitles(mDir,titles);
@@ -87,12 +83,11 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
          TString methodTitle;
          TMVAGlob::GetMethodTitle(methodTitle,titDir);
          TIter nextKey( titDir->GetListOfKeys() );
-         TKey *hkey2;
-         while ((hkey2 = TMVAGlob::NextKey(nextKey,"TH1"))) {
-            TH1 *h = (TH1*)hkey2->ReadObj();
+         while ((hkey = TMVAGlob::NextKey(nextKey,"TH1"))) {
+            TH1 *h = (TH1*)hkey->ReadObj();
             TString hname = h->GetName();
             if (hname.Contains( hNameRef ) && hname.BeginsWith( "MVA_" )) {
-               if (type==3 && h->GetMaximum() > y2) y2 = h->GetMaximum()*1.1;
+               if (type==3 && h->GetMaximum() > y2) y2 = h->GetMaximum();
             }
          }
       }
@@ -110,7 +105,7 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
 
    Int_t color = 1;
    Int_t nmva  = 0;
-   TKey *key;
+   TKey *key, *hkey;
 
    TList hists;
    TList methods;
@@ -119,7 +114,7 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
    TIter next(&methods);
 
    // loop over all methods
-   while ((key = (TKey*)next())) {
+   while (key = (TKey*)next()) {
       TDirectory * mDir = (TDirectory*)key->ReadObj();
       TList titles;
       UInt_t ninst = TMVAGlob::GetListOfTitles(mDir,titles);
@@ -131,9 +126,8 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
          TString methodTitle;
          TMVAGlob::GetMethodTitle(methodTitle,titDir);
          TIter nextKey( titDir->GetListOfKeys() );
-         TKey *hkey2;
-         while ((hkey2 = TMVAGlob::NextKey(nextKey,"TH1"))) {
-            TH1 *h = (TH1*)hkey2->ReadObj();
+         while ((hkey = TMVAGlob::NextKey(nextKey,"TH1"))) {
+            TH1 *h = (TH1*)hkey->ReadObj();
             TString hname = h->GetName();
             if (hname.Contains( hNameRef ) && hname.BeginsWith( "MVA_" )) {
                h->SetLineWidth(3);
@@ -190,10 +184,12 @@ void plot_efficiencies( TFile* file, Int_t type = 2, TDirectory* BinDir=0)
 
    c->Update();
 
+//   TString fname = "plots/" + hNameRef;
    TString fname = string(PLOTSDIR) + "/" + hNameRef;
    if (TString(BinDir->GetName()).Contains("multicut")){
       TString fprepend(BinDir->GetName());
       fprepend.ReplaceAll("multicutMVA_","");
+//      fname = "plots/" + fprepend + "_" + hNameRef;
       fname = string(PLOTSDIR) + "/" + fprepend + "_" + hNameRef;
    }
    if (__SAVE_IMAGE__) TMVAGlob::imgconv( c, fname );
@@ -210,13 +206,10 @@ void efficiencies( TString fin = "TMVA.root", Int_t type = 2, Bool_t useTMVAStyl
    TMVAGlob::Initialize( useTMVAStyle );
 
    // checks if file with name "fin" is already open, and if not opens one
-   TFile *file = (TFile*)gROOT->GetListOfFiles()->FindObject(fin);
-   if (!file || !file->IsOpen()) {
-         file = new TFile(fin);
-   }
+   TFile* file = TMVAGlob::OpenFile( fin );
 
    // check if multi-cut MVA or only one set of MVAs
-//   Bool_t multiMVA=kFALSE;
+   Bool_t multiMVA=kFALSE;
    TIter nextDir(file->GetListOfKeys());
    TKey *key;
    // loop over all directories and check if
@@ -227,7 +220,7 @@ void efficiencies( TString fin = "TMVA.root", Int_t type = 2, Bool_t useTMVAStyl
       TDirectory *d = (TDirectory*)key->ReadObj();
       TString path(d->GetPath());
       if (path.Contains("multicutMVA")){
-//         multiMVA=kTRUE;
+         multiMVA=kTRUE;
          plot_efficiencies( file, type, d );
       }
    }

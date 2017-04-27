@@ -1,35 +1,5 @@
 #include "plotsdir.h"
-#include <iostream>
-#include <iomanip>
-using std::cout;
-using std::endl;
-
 #include "tmvaglob.C"
-
-#include "RQ_OBJECT.h"
-
-#include "TH1.h"
-#include "TROOT.h"
-#include "TList.h"
-#include "TIterator.h"
-#include "TStyle.h"
-#include "TPad.h"
-#include "TCanvas.h"
-#include "TLatex.h"
-#include "TLegend.h"
-#include "TLine.h"
-#include "TH2.h"
-#include "TFormula.h"
-#include "TFile.h"
-#include "TApplication.h"
-#include "TKey.h"
-#include "TClass.h"
-#include "TGaxis.h"
-
-#include "TGWindow.h"
-#include "TGButton.h"
-#include "TGLabel.h"
-#include "TGNumberEntry.h"
 
 // this macro plots the MVA probability distributions (Signal and
 // Background overlayed) of different MVA methods run in TMVA
@@ -78,8 +48,6 @@ void probas( TString fin = "TMVA.root", Bool_t useTMVAStyle = kTRUE )
    char fname[200];
    TH1* sig(0);
    TH1* bgd(0);
-   
-
    while ((key = (TKey*)next())) {
       TDirectory * mDir = (TDirectory*)key->ReadObj();
       TList titles;
@@ -180,7 +148,7 @@ void probas( TString fin = "TMVA.root", Bool_t useTMVAStyle = kTRUE )
                      Float_t ymin = 0;
                      Float_t ymax = TMath::Max( sig->GetMaximum(), bgd->GetMaximum() )*1.5;
             
-                     if (Draw_CFANN_Logy && methodName == "CFANN") ymin = 0.01;
+                     if (Draw_CFANN_Logy && mvaName[imva] == "CFANN") ymin = 0.01;
             
                      // build a frame
                      Int_t nb = 500;
@@ -193,7 +161,7 @@ void probas( TString fin = "TMVA.root", Bool_t useTMVAStyle = kTRUE )
                      // eventually: draw the frame
                      frame->Draw();  
             
-                     if (Draw_CFANN_Logy && methodName == "CFANN") c->SetLogy();
+                     if (Draw_CFANN_Logy && mvaName[imva] == "CFANN") c->SetLogy();
             
                      // overlay signal and background histograms
                      sig->SetMarkerColor( TMVAGlob::c_SignalLine );
@@ -231,6 +199,7 @@ void probas( TString fin = "TMVA.root", Bool_t useTMVAStyle = kTRUE )
                      // save canvas to file
                      c->Update();
                      TMVAGlob::plot_logo();
+//                     sprintf( fname, "plots/mva_pdf_%s_c%i", methodTitle.Data(), countCanvas+1 );
                      sprintf( fname, "%s/mva_pdf_%s_c%i", PLOTSDIR, methodTitle.Data(), countCanvas+1 );
                      if (Save_Images) TMVAGlob::imgconv( c, fname );
                      countCanvas++;

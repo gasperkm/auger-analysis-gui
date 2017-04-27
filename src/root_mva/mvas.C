@@ -25,6 +25,9 @@ void mvas( TString fin = "TMVA.root", HistType htype = MVAType, Bool_t useTMVASt
    TFile* file = TMVAGlob::OpenFile( fin );  
 
    // define Canvas layout here!
+   Int_t xPad = 1; // no of plots in x
+   Int_t yPad = 1; // no of plots in y
+   Int_t noPad = xPad * yPad ; 
    const Int_t width = 600;   // size of canvas
 
    // this defines how many canvases we need
@@ -56,7 +59,7 @@ void mvas( TString fin = "TMVA.root", HistType htype = MVAType, Bool_t useTMVASt
          TString methodTitle;
          TMVAGlob::GetMethodTitle(methodTitle,titDir);
 
-	 std::cout << "--- Found directory for method: " << methodName << "::" << methodTitle << std::flush;
+         cout << "--- Found directory for method: " << methodName << "::" << methodTitle << flush;
          TString hname = "MVA_" + methodTitle;
          if      (htype == ProbaType  ) hname += "_Proba";
          else if (htype == RarityType ) hname += "_Rarity";
@@ -194,7 +197,7 @@ void mvas( TString fin = "TMVA.root", HistType htype = MVAType, Bool_t useTMVASt
             bgdOv->SetLineColor( col );
             bgdOv->Draw("e1same");
 
-            ymax = TMath::Max( ymax, float(TMath::Max( sigOv->GetMaximum(), bgdOv->GetMaximum() )*maxMult ));
+            ymax = TMath::Max( ymax, TMath::Max( sigOv->GetMaximum(), bgdOv->GetMaximum() )*maxMult );
             frame->GetYaxis()->SetLimits( 0, ymax );
       
             // for better visibility, plot thinner lines
@@ -235,6 +238,10 @@ void mvas( TString fin = "TMVA.root", HistType htype = MVAType, Bool_t useTMVASt
 
          TMVAGlob::plot_logo(1.058);
          if (Save_Images) {
+/*            if      (htype == MVAType)     TMVAGlob::imgconv( c, Form("plots/mva_%s",     methodTitle.Data()) );
+            else if (htype == ProbaType)   TMVAGlob::imgconv( c, Form("plots/proba_%s",   methodTitle.Data()) ); 
+            else if (htype == CompareType) TMVAGlob::imgconv( c, Form("plots/overtrain_%s", methodTitle.Data()) ); 
+            else                           TMVAGlob::imgconv( c, Form("plots/rarity_%s",  methodTitle.Data()) ); */
             if      (htype == MVAType)     TMVAGlob::imgconv( c, Form("%s/mva_%s",     PLOTSDIR, methodTitle.Data()) );
             else if (htype == ProbaType)   TMVAGlob::imgconv( c, Form("%s/proba_%s",   PLOTSDIR, methodTitle.Data()) ); 
             else if (htype == CompareType) TMVAGlob::imgconv( c, Form("%s/overtrain_%s", PLOTSDIR, methodTitle.Data()) ); 

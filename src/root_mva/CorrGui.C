@@ -35,10 +35,7 @@ void CorrGui(  TString fin = "TMVA.root", TString dirName = "InputVariables_Id",
 
    // configure buttons      
    // checks if file with name "fin" is already open, and if not opens one
-   TFile *file = (TFile*)gROOT->GetListOfFiles()->FindObject(fin);
-   if (!file || !file->IsOpen()) {
-         file = new TFile(fin);
-   }
+   TFile* file = TMVAGlob::OpenFile( fin );  
 
    TDirectory* dir = (TDirectory*)gDirectory->Get( dirName );
    if (!dir) {
@@ -79,7 +76,7 @@ void CorrGui(  TString fin = "TMVA.root", TString dirName = "InputVariables_Id",
       cbar->AddButton( (Var[ic].Contains("_target") ? 
                         Form( "      Target: %s      ", Var[ic].ReplaceAll("_target","").Data()) : 
                         Form( "      Variable: %s      ", Var[ic].Data())),
-                       Form( ".x %s/correlationscatters.C\(\"%s\",\"%s\",\"%s\",\"%s\",%i)", 
+                       Form( ".x %s/root_mva/correlationscatters.C\(\"%s\",\"%s\",\"%s\",\"%s\",%i)", 
                              scriptpath, fin.Data(), Var[ic].Data(), dirName.Data(), title.Data(), (Int_t)isRegression ),
                        buttonType );
    }

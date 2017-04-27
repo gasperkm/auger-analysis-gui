@@ -59,7 +59,8 @@ void bdtcontrolplots( TDirectory *bdtdir ) {
 
    for (Int_t i=0; i<nPlots; i++){
       Int_t color = 4; 
-      c->cd(i+1);
+      TPad * cPad;
+      cPad = (TPad*)c->cd(i+1);
       TH1 *h = (TH1*) bdtdir->Get(hname[i]);
       
       if (h){
@@ -107,13 +108,13 @@ void bdtcontrolplots( TDirectory *bdtdir ) {
          TObject *obj=key->ReadObj();
          if (obj->IsA()->InheritsFrom(TH1::Class())){   
             TH1F *hx = (TH1F*)obj;
-            TString hhname(Form("%s",obj->GetTitle()));
-            if (hhname.Contains("BoostWeightsInTreeB")){ 
+            TString hname(Form("%s",obj->GetTitle()));
+            if (hname.Contains("BoostWeightsInTreeB")){ 
                c2->cd(ipad++);
                hx->SetLineColor(4);
                hx->Draw();
-               hhname.ReplaceAll("TreeB","TreeS");
-               bdtdir->GetObject(hhname.Data(),hx);
+               hname.ReplaceAll("TreeB","TreeS");
+               bdtdir->GetObject(hname.Data(),hx);
                if (hx) {
                   hx->SetLineColor(2);
                   hx->Draw("same");
@@ -126,10 +127,12 @@ void bdtcontrolplots( TDirectory *bdtdir ) {
    }
 
    // write to file
+//   TString fname = Form( "plots/%s_ControlPlots", titName.Data() );
    TString fname = Form( "%s/%s_ControlPlots", PLOTSDIR, titName.Data() );
    TMVAGlob::imgconv( c, fname );
    
    if (c2){
+//      fname = Form( "plots/%s_ControlPlots2", titName.Data() );
       fname = Form( "%s/%s_ControlPlots2", PLOTSDIR, titName.Data() );
       TMVAGlob::imgconv( c2, fname );
    }

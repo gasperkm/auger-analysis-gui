@@ -95,7 +95,7 @@ void variables( TString fin = "TMVA.root", TString dirName = "InputVariables_Id"
       TH1 *bgd = (TH1*)dir->Get(bgname);
       if (bgd == NULL) {
          cout << "ERROR!!! couldn't find background histo for" << hname << endl;
-         return;
+         exit;
       }
 
       // this is set but not stored during plot creation in MVA_Factory
@@ -169,6 +169,7 @@ void variables( TString fin = "TMVA.root", TString dirName = "InputVariables_Id"
 
       // save canvas to file
       if (countPad%noPadPerCanv==0) {
+//         TString fname = Form( "plots/%s_c%i", outfname.Data(), countCanvas );
          TString fname = Form( "%s/%s_c%i", PLOTSDIR, outfname.Data(), countCanvas );
          TMVAGlob::plot_logo();
          TMVAGlob::imgconv( canv, fname );
@@ -180,6 +181,7 @@ void variables( TString fin = "TMVA.root", TString dirName = "InputVariables_Id"
    }
    
    if (createNewFig) {
+//      TString fname = Form( "plots/%s_c%i", outfname.Data(), countCanvas );
       TString fname = Form( "%s/%s_c%i", PLOTSDIR, outfname.Data(), countCanvas );
       TMVAGlob::plot_logo();
       TMVAGlob::imgconv( canv, fname );

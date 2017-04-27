@@ -219,6 +219,12 @@
 #ifndef ROOT_TMath
 #include "TMath.h"
 #endif
+//#ifndef ROOT_TMatrix
+//#include "TMatrix.h"
+//#endif
+#ifndef ROOT_TMatrixD
+#include "TMatrixDEigen.h"
+#endif
 #ifndef ROOT_TRandom
 #include "TRandom.h"
 #endif

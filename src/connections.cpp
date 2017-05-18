@@ -641,6 +641,7 @@ void TGAppMainFrame::CheckEnergyBin()
       TTree *tempTree = (TTree*)ifile->Get(stemp.c_str());
       cout << "Number of total entries for " << stemp << " = " << tempTree->GetEntries() << endl;
 
+      // TODO: Do the same for SD only analysis
       tempTree->SetBranchAddress("fdenergy", &ftemp);
 
 /*      sprintf(ctemp, "(fdenergy>%lf)&&(fdenergy<=%lf)", ecutBins[selectedBin-1], ecutBins[selectedBin]);
@@ -700,7 +701,8 @@ void TGAppMainFrame::CheckZenithBin()
       TTree *tempTree = (TTree*)ifile->Get(stemp.c_str());
       cout << "Number of total entries for " << stemp << " = " << tempTree->GetEntries() << endl;
 
-      tempTree->SetBranchAddress("zenith", &ftemp);
+      // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle accordingly
+      tempTree->SetBranchAddress("zenithFD", &ftemp);
 
 /*      sprintf(ctemp, "(zenith>%lf)&&(zenith<=%lf)", AsinSqrt(zcutBins[selectedBin-1],true), AsinSqrt(zcutBins[selectedBin],true));
       cout << "Selection: " << ctemp << endl;
@@ -770,8 +772,10 @@ void TGAppMainFrame::CheckBothBins()
       TTree *tempTree = (TTree*)ifile->Get(stemp.c_str());
       cout << "Number of total entries for " << stemp << " = " << tempTree->GetEntries() << endl;
 
+      // TODO: Do the same for SD only analysis
       tempTree->SetBranchAddress("fdenergy", &ftemp[0]);
-      tempTree->SetBranchAddress("zenith", &ftemp[1]);
+      // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle accordingly
+      tempTree->SetBranchAddress("zenithFD", &ftemp[1]);
 
       evtcount[0] = 0;
       evtcount[1] = 0;
@@ -1071,6 +1075,8 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
          selectedBin[0] = (int)cutEnergyBinSelect->widgetCB->GetSelected();
          selectedBin[1] = (int)cutZenithBinSelect->widgetCB->GetSelected();
 
+         // TODO: Also try to apply cuts on other observables like, if we wish to do analysis on original risetime - to reject events with -1
+
          TTree *signalTree;
          for(int j = 1; j <=(ifile->GetNkeys()-1); j++)
          {
@@ -1085,8 +1091,9 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 	       }
 	       else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
 	       {
+                  // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	          cout << "Both energy and zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
-	          stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	          stemp2 = "((zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
 	          cout << "Cut setting: " << stemp2 << endl;
 	          signalTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
                }
@@ -1100,7 +1107,7 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 	       else if(cutZenith->widgetChBox[0]->IsDown())
 	       {
 	          cout << "Only zenith cuts are enabled (signal): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
-	          stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	          stemp2 = "(zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
 	          cout << "Cut setting: " << stemp2 << endl;
 	          signalTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
 	       }
@@ -1128,8 +1135,9 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 	       }
 	       else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
 	       {
+                  // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	          cout << "Both energy and zenith cuts are enabled (background): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
-	          stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	          stemp2 = "((zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
 	          cout << "Cut setting: " << stemp2 << endl;
 	          backgroundTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
                }
@@ -1143,7 +1151,7 @@ void TGAppMainFrame::StartMvaAnalysis(int opt)
 	       else if(cutZenith->widgetChBox[0]->IsDown())
 	       {
 	          cout << "Only zenith cuts are enabled (background): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
-	          stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	          stemp2 = "(zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
 	          cout << "Cut setting: " << stemp2 << endl;
 	          backgroundTree = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
 	       }
@@ -1385,8 +1393,9 @@ cout << "MVA method: " << mvamethod << endl;
 	    }
 	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
 	    {
+                  // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	       cout << "Both energy and zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
-	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       stemp2 = "((zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
 	       cout << "Cut setting: " << stemp2 << endl;
 	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
             }
@@ -1399,8 +1408,9 @@ cout << "MVA method: " << mvamethod << endl;
 	    }
 	    else if(cutZenith->widgetChBox[0]->IsDown())
 	    {
+               // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	       cout << "Only zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
-	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       stemp2 = "(zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
 	       cout << "Cut setting: " << stemp2 << endl;
 	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
 	    }
@@ -1533,8 +1543,9 @@ cout << "MVA method: " << mvamethod << endl;
 	    }
 	    else if( cutEnergy->widgetChBox[0]->IsDown() && cutZenith->widgetChBox[0]->IsDown() )
 	    {
+               // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	       cout << "Both energy and zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << "), Energy = (" << DblToStr(ecutBins[selectedBin[0]-1],6) << "," << DblToStr(ecutBins[selectedBin[0]],6) << ")." << endl;
-	       stemp2 = "((zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
+	       stemp2 = "((zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + "))&&((fdenergy>" + DblToStr(ecutBins[selectedBin[0]-1],6) + ")&&(fdenergy<=" + DblToStr(ecutBins[selectedBin[0]],6) + "))";
 	       cout << "Cut setting: " << stemp2 << endl;
 	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
             }
@@ -1547,8 +1558,9 @@ cout << "MVA method: " << mvamethod << endl;
 	    }
 	    else if(cutZenith->widgetChBox[0]->IsDown())
 	    {
+               // TODO: Give option to perform only SD or SD+FD analysis -> choose zenith angle and energy accordingly
 	       cout << "Only zenith cuts are enabled (application): Zenith = (" << DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) << "," << DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) << ")." << endl;
-	       stemp2 = "(zenith>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenith<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
+	       stemp2 = "(zenithFD>" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]-1],false),6) + ")&&(zenithFD<=" + DblToStr(AsinSqrt(zcutBins[selectedBin[1]],false),6) + ")";
 	       cout << "Cut setting: " << stemp2 << endl;
 	       signalapp = ((TTree*)ifile->Get(stemp.c_str()))->CopyTree(stemp2.c_str());
 	    }
@@ -2156,6 +2168,7 @@ void TGAppMainFrame::GetCorrelations(TFile *ofile)
 
    itemp = new int[2];
    itemp[0] = vtemp.size();
+   itemp[1] = 0;
 
    for(int i = 0; i < itemp[0]; i++)
    {
@@ -2303,13 +2316,29 @@ cout << "Number of events in the tree = " << app->GetEntries() << endl;
       backcount[i] = 0;
    }
 
+   // Delete the old MVA error files
+   stemp = "rm -fr " + string(currentAnalysisDir) + "/mva_error" + IntToStr(curtree) + ".dat";
+   cout << "Deleting old mva_error file: " << stemp << endl;
+   system(stemp.c_str());
+
 cout << "Current tree = " << curtree << ", Observables size = " << obs.size() << endl;
    for(int ievt = 0; ievt < app->GetEntries(); ievt++)
    {
+      outFile.open((string("mva_error") + IntToStr(curtree) + string(".dat")).c_str(), ofstream::out | ofstream::app);
+      outFile << obs.size() << "\t";
+     
       app->GetEntry(ievt);
       cout << "Entry printout " << ievt << ":" << endl;
       for(int j = 0; j < 3*obs.size(); j++)
+      {
          cout << "j = " << j << ": observable value = " << obsvars[j] << endl;
+	 if(j%3 == 0)
+	    outFile << obsvars[j] << "\t";
+	 else if(j%3 == 1)
+	    outFile << obsvars[j-1] - obsvars[j] << "\t";
+	 else if(j%3 == 2)
+	    outFile << obsvars[j] - obsvars[j-2] << "\t";
+      }
       cnt = 0;
 
       // GKM - Calculate error
@@ -2379,7 +2408,6 @@ cout << "Current tree = " << curtree << ", Observables size = " << obs.size() <<
       dtemp = TMath::Sqrt(dtemp);
       cout << "MVA variable error (negative error) = " << dtemp << endl;
 
-      outFile.open((string("mva_error") + IntToStr(curtree) + string(".dat")).c_str(), ofstream::out | ofstream::app);
       outFile << dtemp << "\t";
 
       dtemp = 0;
@@ -2555,6 +2583,11 @@ void TGAppMainFrame::SetupBinning(std::string obs, float *limit)
       limit[0] = plotSetLambda->widgetNE[0]->GetNumber();//35.;
       limit[1] = plotSetLambda->widgetNE[1]->GetNumber();//135.;
    }
+   else if( (obs == "sdenergy") || (obs == "sdenergy_neg") || (obs == "sdenergy_pos") ) // TODO: Add separate SD analysis
+   {
+      limit[0] = TMath::Power(10,plotSetFdenergy->widgetNE[0]->GetNumber());//1.e+17;
+      limit[1] = TMath::Power(10,plotSetFdenergy->widgetNE[1]->GetNumber());//1.e+20;
+   }
    else if( (obs == "fdenergy") || (obs == "fdenergy_neg") || (obs == "fdenergy_pos") )
    {
       limit[0] = TMath::Power(10,plotSetFdenergy->widgetNE[0]->GetNumber());//1.e+17;
@@ -2600,10 +2633,25 @@ void TGAppMainFrame::SetupBinning(std::string obs, float *limit)
       limit[0] = plotSetRisetime->widgetNE[0]->GetNumber();//0.;
       limit[1] = plotSetRisetime->widgetNE[1]->GetNumber();//650.;
    }
-   else if( (obs == "zenith") || (obs == "zenith_neg") || (obs == "zenith_pos") )
+   else if( (obs == "zenithSD") || (obs == "zenithSD_neg") || (obs == "zenithSD_pos") ) // TODO: Add separate SD analysis
    {
       limit[0] = cutZenith->widgetNE[0]->GetNumber();//0.;
       limit[1] = cutZenith->widgetNE[1]->GetNumber();//60.;
+   }
+   else if( (obs == "azimuthSD") || (obs == "azimuthSD_neg") || (obs == "azimuthSD_pos") ) // TODO: Add separate SD analysis
+   {
+      limit[0] = 0.;
+      limit[1] = 360.;
+   }
+   else if( (obs == "zenithFD") || (obs == "zenithFD_neg") || (obs == "zenithFD_pos") )
+   {
+      limit[0] = cutZenith->widgetNE[0]->GetNumber();//0.;
+      limit[1] = cutZenith->widgetNE[1]->GetNumber();//60.;
+   }
+   else if( (obs == "azimuthFD") || (obs == "azimuthFD_neg") || (obs == "azimuthFD_pos") )
+   {
+      limit[0] = 0.;
+      limit[1] = 360.;
    }
    else if(obs == "MVA")
    {
@@ -2624,6 +2672,8 @@ void TGAppMainFrame::SetupAxis(TH1F *hist, string obs)
       obsdesc = "GH parameter X_{0} (g/cm^{2})";
    else if( (obs == "lambda") || (obs == "lambda_neg") || (obs == "lambda_pos") )
       obsdesc = "GH parameter lambda (g/cm^{2})";
+   else if( (obs == "sdenergy") || (obs == "sdenergy_neg") || (obs == "sdenergy_pos") )
+      obsdesc = "SD reconstructed energy (eV)";
    else if( (obs == "fdenergy") || (obs == "fdenergy_neg") || (obs == "fdenergy_pos") )
       obsdesc = "FD reconstructed energy (eV)";
    else if( (obs == "shfoot") || (obs == "shfoot_neg") || (obs == "shfoot_pos") )
@@ -2642,8 +2692,14 @@ void TGAppMainFrame::SetupAxis(TH1F *hist, string obs)
       obsdesc = "SD tank risetime (ns)";
    else if( (obs == "aop") || (obs == "aop_neg") || (obs == "aop_pos") )
       obsdesc = "Area-over-Peak (VEM)";
-   else if( (obs == "zenith") || (obs == "zenith_neg") || (obs == "zenith_pos") )
-      obsdesc = "Zenith angle (degree)";
+   else if( (obs == "zenithSD") || (obs == "zenithSD_neg") || (obs == "zenithSD_pos") )
+      obsdesc = "SD Zenith angle (degree)";
+   else if( (obs == "azimuthSD") || (obs == "azimuthSD_neg") || (obs == "azimuthSD_pos") )
+      obsdesc = "SD Azimuth angle (degree)";
+   else if( (obs == "zenithFD") || (obs == "zenithFD_neg") || (obs == "zenithFD_pos") )
+      obsdesc = "FD Zenith angle (degree)";
+   else if( (obs == "azimuthFD") || (obs == "azimuthFD_neg") || (obs == "azimuthFD_pos") )
+      obsdesc = "FD Azimuth angle (degree)";
    else if(obs == "MVA")
       obsdesc = "MVA observable";
    else

@@ -41,6 +41,7 @@ TGAppMainFrame::TGAppMainFrame(const TGWindow *p, int w, int h)
    observables.push_back("xmax");            observablesCheck.push_back(1);
    observables.push_back("x0");              observablesCheck.push_back(0);
    observables.push_back("lambda");          observablesCheck.push_back(0);
+   observables.push_back("sdenergy");        observablesCheck.push_back(0);
    observables.push_back("fdenergy");        observablesCheck.push_back(0);
    observables.push_back("shfoot");          observablesCheck.push_back(1);
    observables.push_back("shwsize");         observablesCheck.push_back(1);
@@ -49,7 +50,10 @@ TGAppMainFrame::TGAppMainFrame(const TGWindow *p, int w, int h)
    observables.push_back("risetime");        observablesCheck.push_back(0);
    observables.push_back("risetimerecalc");  observablesCheck.push_back(1);
    observables.push_back("aop");             observablesCheck.push_back(0);
-   observables.push_back("zenith");          observablesCheck.push_back(0);
+   observables.push_back("zenithSD");        observablesCheck.push_back(0);
+   observables.push_back("azimuthSD");       observablesCheck.push_back(0);
+   observables.push_back("zenithFD");        observablesCheck.push_back(0);
+   observables.push_back("azimuthFD");       observablesCheck.push_back(0);
    nrobs = observables.size();
 
    // Populate the config, sdcut and fdcut names vectors

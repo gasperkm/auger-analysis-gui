@@ -17,6 +17,7 @@ public:
    float xmax;          // depth of shower maximum
    float x0;            // GH shape parameter X0 (0 is at first interaction point
    float lambda;        // GH shape parameter lambda
+   float sdenergy;      // Total energy from SD
    float fdenergy;      // Total energy from FD
    float shfoot;        // Shower foot
    float shwsize;       // Shower size - replacement for S1000
@@ -26,7 +27,10 @@ public:
    float risetime;      // risetime
    float risetimerecalc;      // recalculated risetime
    float aop;           // area-over-peak
-   float zenith;	// zenith angle
+   float zenithSD;	// zenith angle
+   float azimuthSD;	// azimuth angle
+   float zenithFD;	// zenith angle
+   float azimuthFD;	// azimuth angle
 };
 
 class AdstMva
@@ -51,7 +55,7 @@ public:
    void GetActiveEyes();
 
    void PrepareOtherTrees(unsigned int nrfiles, int innr);
-   int GetEyeLongestTrack();
+   int GetEyeBestTrack();
 
    TGraph *gr;
    TGraphErrors *grErr;

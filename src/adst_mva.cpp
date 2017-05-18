@@ -6,10 +6,12 @@
 
 Observables::Observables()
 {
+   // TODO: Add more observables - for galactic maps, add also galactic coordinates of direction
    xmax = -1;
    x0 = -1;
    lambda = -1;
    shfoot = -1;
+   sdenergy = -1;
    fdenergy = -1;
    nrmu = -1;
    shwsize = -1;
@@ -17,8 +19,11 @@ Observables::Observables()
    curvature = -1;
    risetime = -1;
    risetimerecalc = -1;
-   aop = -1;
-   zenith = -1;
+   aop = -1;	// TODO: Calculate AOP on your own
+   zenithSD = -1;
+   azimuthSD = -1;
+   zenithFD = -1;
+   azimuthFD = -1;
 }
 
 Observables::~Observables()
@@ -696,6 +701,7 @@ void AdstMva::PrepareOtherTrees(unsigned int nrfiles, int innr)
    other_sig_tree->Branch("xmax",      &(othersig->xmax), "xmax/F");
    other_sig_tree->Branch("x0",        &(othersig->x0), "x0/F");
    other_sig_tree->Branch("lambda",    &(othersig->lambda), "lambda/F");
+   other_sig_tree->Branch("sdenergy",  &(othersig->sdenergy), "sdenergy/F");
    other_sig_tree->Branch("fdenergy",  &(othersig->fdenergy), "fdenergy/F");
    other_sig_tree->Branch("shfoot",    &(othersig->shfoot), "shfoot/F");
    other_sig_tree->Branch("shwsize",   &(othersig->shwsize), "shwsize/F");
@@ -705,11 +711,15 @@ void AdstMva::PrepareOtherTrees(unsigned int nrfiles, int innr)
    other_sig_tree->Branch("risetime",  &(othersig->risetime), "risetime/F");
    other_sig_tree->Branch("risetimerecalc",  &(othersig->risetimerecalc), "risetimerecalc/F");
    other_sig_tree->Branch("aop",       &(othersig->aop), "aop/F");
-   other_sig_tree->Branch("zenith",    &(othersig->zenith), "zenith/F");
+   other_sig_tree->Branch("zenithSD",  &(othersig->zenithSD), "zenithSD/F");
+   other_sig_tree->Branch("azimuthSD", &(othersig->azimuthSD), "azimuthSD/F");
+   other_sig_tree->Branch("zenithFD",  &(othersig->zenithFD), "zenithFD/F");
+   other_sig_tree->Branch("azimuthFD", &(othersig->azimuthFD), "azimuthFD/F");
 
    other_sig_tree->Branch("xmax_neg",      &(othersig_neg->xmax), "xmax_neg/F");
    other_sig_tree->Branch("x0_neg",        &(othersig_neg->x0), "x0_neg/F");
    other_sig_tree->Branch("lambda_neg",    &(othersig_neg->lambda), "lambda_neg/F");
+   other_sig_tree->Branch("sdenergy_neg",  &(othersig_neg->sdenergy), "sdenergy_neg/F");
    other_sig_tree->Branch("fdenergy_neg",  &(othersig_neg->fdenergy), "fdenergy_neg/F");
    other_sig_tree->Branch("shfoot_neg",    &(othersig_neg->shfoot), "shfoot_neg/F");
    other_sig_tree->Branch("shwsize_neg",   &(othersig_neg->shwsize), "shwsize_neg/F");
@@ -719,11 +729,15 @@ void AdstMva::PrepareOtherTrees(unsigned int nrfiles, int innr)
    other_sig_tree->Branch("risetime_neg",  &(othersig_neg->risetime), "risetime_neg/F");
    other_sig_tree->Branch("risetimerecalc_neg",  &(othersig_neg->risetimerecalc), "risetimerecalc_neg/F");
    other_sig_tree->Branch("aop_neg",       &(othersig_neg->aop), "aop_neg/F");
-   other_sig_tree->Branch("zenith_neg",    &(othersig_neg->zenith), "zenith_neg/F");
+   other_sig_tree->Branch("zenithSD_neg",  &(othersig_neg->zenithSD), "zenithSD_neg/F");
+   other_sig_tree->Branch("azimuthSD_neg", &(othersig_neg->azimuthSD), "azimuthSD_neg/F");
+   other_sig_tree->Branch("zenithFD_neg",  &(othersig_neg->zenithFD), "zenithFD_neg/F");
+   other_sig_tree->Branch("azimuthFD_neg", &(othersig_neg->azimuthFD), "azimuthFD_neg/F");
 
    other_sig_tree->Branch("xmax_pos",      &(othersig_pos->xmax), "xmax_pos/F");
    other_sig_tree->Branch("x0_pos",        &(othersig_pos->x0), "x0_pos/F");
    other_sig_tree->Branch("lambda_pos",    &(othersig_pos->lambda), "lambda_pos/F");
+   other_sig_tree->Branch("sdenergy_pos",  &(othersig_pos->sdenergy), "sdenergy_pos/F");
    other_sig_tree->Branch("fdenergy_pos",  &(othersig_pos->fdenergy), "fdenergy_pos/F");
    other_sig_tree->Branch("shfoot_pos",    &(othersig_pos->shfoot), "shfoot_pos/F");
    other_sig_tree->Branch("shwsize_pos",   &(othersig_pos->shwsize), "shwsize_pos/F");
@@ -733,7 +747,10 @@ void AdstMva::PrepareOtherTrees(unsigned int nrfiles, int innr)
    other_sig_tree->Branch("risetime_pos",  &(othersig_pos->risetime), "risetime_pos/F");
    other_sig_tree->Branch("risetimerecalc_pos",  &(othersig_pos->risetimerecalc), "risetimerecalc_pos/F");
    other_sig_tree->Branch("aop_pos",       &(othersig_pos->aop), "aop_pos/F");
-   other_sig_tree->Branch("zenith_pos",    &(othersig_pos->zenith), "zenith_pos/F");
+   other_sig_tree->Branch("zenithSD_pos",  &(othersig_pos->zenithSD), "zenithSD_pos/F");
+   other_sig_tree->Branch("azimuthSD_pos", &(othersig_pos->azimuthSD), "azimuthSD_pos/F");
+   other_sig_tree->Branch("zenithFD_pos",  &(othersig_pos->zenithFD), "zenithFD_pos/F");
+   other_sig_tree->Branch("azimuthFD_pos", &(othersig_pos->azimuthFD), "azimuthFD_pos/F");
 
    other_sig_tree->Write();
 
@@ -778,9 +795,9 @@ void AdstMva::PrepareOtherTrees(unsigned int nrfiles, int innr)
    delete othersig;
 }
 
-int AdstMva::GetEyeLongestTrack()
+int AdstMva::GetEyeBestTrack()
 {
-   cout << "# Entering function AdstMva::GetEyeLongestTrack()..." << endl;
+   cout << "# Entering function AdstMva::GetEyeBestTrack()..." << endl;
    double longtrack = 0.0;
    double xmaxerr = 1000.;
    double chi2ndf = 0.0;
@@ -912,6 +929,7 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    sig_tree->Branch("xmax",      &(sig[0]->xmax),      "xmax/F");
    sig_tree->Branch("x0",        &(sig[0]->x0),        "x0/F");
    sig_tree->Branch("lambda",    &(sig[0]->lambda),    "lambda/F");
+   sig_tree->Branch("sdenergy",  &(sig[0]->sdenergy),  "sdenergy/F");
    sig_tree->Branch("fdenergy",  &(sig[0]->fdenergy),  "fdenergy/F");
    sig_tree->Branch("shfoot",    &(sig[0]->shfoot),    "shfoot/F");
    sig_tree->Branch("shwsize",   &(sig[0]->shwsize),   "shwsize/F");
@@ -921,11 +939,15 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    sig_tree->Branch("risetime",  &(sig[0]->risetime),  "risetime/F");
    sig_tree->Branch("risetimerecalc",  &(sig[0]->risetimerecalc),  "risetimerecalc/F");
    sig_tree->Branch("aop",       &(sig[0]->aop),       "aop/F");
-   sig_tree->Branch("zenith",    &(sig[0]->zenith),    "zenith/F");
+   sig_tree->Branch("zenithSD",  &(sig[0]->zenithSD),  "zenithSD/F");
+   sig_tree->Branch("azimuthSD", &(sig[0]->azimuthSD), "azimuthSD/F");
+   sig_tree->Branch("zenithFD",  &(sig[0]->zenithFD),  "zenithFD/F");
+   sig_tree->Branch("azimuthFD", &(sig[0]->azimuthFD), "azimuthFD/F");
 
    sig_tree->Branch("xmax_neg",      &(sig[1]->xmax),      "xmax_neg/F");
    sig_tree->Branch("x0_neg",        &(sig[1]->x0),        "x0_neg/F");
    sig_tree->Branch("lambda_neg",    &(sig[1]->lambda),    "lambda_neg/F");
+   sig_tree->Branch("sdenergy_neg",  &(sig[1]->sdenergy),  "sdenergy_neg/F");
    sig_tree->Branch("fdenergy_neg",  &(sig[1]->fdenergy),  "fdenergy_neg/F");
    sig_tree->Branch("shfoot_neg",    &(sig[1]->shfoot),    "shfoot_neg/F");
    sig_tree->Branch("shwsize_neg",   &(sig[1]->shwsize),   "shwsize_neg/F");
@@ -935,11 +957,15 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    sig_tree->Branch("risetime_neg",  &(sig[1]->risetime),  "risetime_neg/F");
    sig_tree->Branch("risetimerecalc_neg",  &(sig[1]->risetimerecalc),  "risetimerecalc_neg/F");
    sig_tree->Branch("aop_neg",       &(sig[1]->aop),       "aop_neg/F");
-   sig_tree->Branch("zenith_neg",    &(sig[1]->zenith),    "zenith_neg/F");
+   sig_tree->Branch("zenithSD_neg",  &(sig[1]->zenithSD),  "zenithSD_neg/F");
+   sig_tree->Branch("azimuthSD_neg", &(sig[1]->azimuthSD), "azimuthSD_neg/F");
+   sig_tree->Branch("zenithFD_neg",  &(sig[1]->zenithFD),  "zenithFD_neg/F");
+   sig_tree->Branch("azimuthFD_neg", &(sig[1]->azimuthFD), "azimuthFD_neg/F");
 
    sig_tree->Branch("xmax_pos",      &(sig[2]->xmax),      "xmax_pos/F");
    sig_tree->Branch("x0_pos",        &(sig[2]->x0),        "x0_pos/F");
    sig_tree->Branch("lambda_pos",    &(sig[2]->lambda),    "lambda_pos/F");
+   sig_tree->Branch("sdenergy_pos",  &(sig[2]->sdenergy),  "sdenergy_pos/F");
    sig_tree->Branch("fdenergy_pos",  &(sig[2]->fdenergy),  "fdenergy_pos/F");
    sig_tree->Branch("shfoot_pos",    &(sig[2]->shfoot),    "shfoot_pos/F");
    sig_tree->Branch("shwsize_pos",   &(sig[2]->shwsize),   "shwsize_pos/F");
@@ -949,11 +975,15 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    sig_tree->Branch("risetime_pos",  &(sig[2]->risetime),  "risetime_pos/F");
    sig_tree->Branch("risetimerecalc_pos",  &(sig[2]->risetimerecalc),  "risetimerecalc_pos/F");
    sig_tree->Branch("aop_pos",       &(sig[2]->aop),       "aop_pos/F");
-   sig_tree->Branch("zenith_pos",    &(sig[2]->zenith),    "zenith_pos/F");
+   sig_tree->Branch("zenithSD_pos",  &(sig[2]->zenithSD),  "zenithSD_pos/F");
+   sig_tree->Branch("azimuthSD_pos", &(sig[2]->azimuthSD), "azimuthSD_pos/F");
+   sig_tree->Branch("zenithFD_pos",  &(sig[2]->zenithFD),  "zenithFD_pos/F");
+   sig_tree->Branch("azimuthFD_pos", &(sig[2]->azimuthFD), "azimuthFD_pos/F");
    
    all_tree->Branch("xmax",      &(all[0]->xmax),      "xmax/F");
    all_tree->Branch("x0",        &(all[0]->x0),        "x0/F");
    all_tree->Branch("lambda",    &(all[0]->lambda),    "lambda/F");
+   all_tree->Branch("sdenergy",  &(all[0]->sdenergy),  "sdenergy/F");
    all_tree->Branch("fdenergy",  &(all[0]->fdenergy),  "fdenergy/F");
    all_tree->Branch("shfoot",    &(all[0]->shfoot),    "shfoot/F");
    all_tree->Branch("shwsize",   &(all[0]->shwsize),   "shwsize/F");
@@ -963,11 +993,15 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    all_tree->Branch("risetime",  &(all[0]->risetime),  "risetime/F");
    all_tree->Branch("risetimerecalc",  &(all[0]->risetimerecalc),  "risetimerecalc/F");
    all_tree->Branch("aop",       &(all[0]->aop),       "aop/F");
-   all_tree->Branch("zenith",    &(all[0]->zenith),    "zenith/F");
+   all_tree->Branch("zenithSD",  &(all[0]->zenithSD),  "zenithSD/F");
+   all_tree->Branch("azimuthSD", &(all[0]->azimuthSD), "azimuthSD/F");
+   all_tree->Branch("zenithFD",  &(all[0]->zenithFD),  "zenithFD/F");
+   all_tree->Branch("azimuthFD", &(all[0]->azimuthFD), "azimuthFD/F");
    
    all_tree->Branch("xmax_neg",      &(all[1]->xmax),      "xmax_neg/F");
    all_tree->Branch("x0_neg",        &(all[1]->x0),        "x0_neg/F");
    all_tree->Branch("lambda_neg",    &(all[1]->lambda),    "lambda_neg/F");
+   all_tree->Branch("sdenergy_neg",  &(all[1]->sdenergy),  "sdenergy_neg/F");
    all_tree->Branch("fdenergy_neg",  &(all[1]->fdenergy),  "fdenergy_neg/F");
    all_tree->Branch("shfoot_neg",    &(all[1]->shfoot),    "shfoot_neg/F");
    all_tree->Branch("shwsize_neg",   &(all[1]->shwsize),   "shwsize_neg/F");
@@ -977,21 +1011,28 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
    all_tree->Branch("risetime_neg",  &(all[1]->risetime),  "risetime_neg/F");
    all_tree->Branch("risetimerecalc_neg",  &(all[1]->risetimerecalc),  "risetimerecalc_neg/F");
    all_tree->Branch("aop_neg",       &(all[1]->aop),       "aop_neg/F");
-   all_tree->Branch("zenith_neg",    &(all[1]->zenith),    "zenith_neg/F");
+   all_tree->Branch("zenithSD_neg",  &(all[1]->zenithSD),  "zenithSD_neg/F");
+   all_tree->Branch("azimuthSD_neg", &(all[1]->azimuthSD), "azimuthSD_neg/F");
+   all_tree->Branch("zenithFD_neg",  &(all[1]->zenithFD),  "zenithFD_neg/F");
+   all_tree->Branch("azimuthFD_neg", &(all[1]->azimuthFD), "azimuthFD_neg/F");
    
-   all_tree->Branch("xmax_pos",      &(all[1]->xmax),      "xmax_pos/F");
-   all_tree->Branch("x0_pos",        &(all[1]->x0),        "x0_pos/F");
-   all_tree->Branch("lambda_pos",    &(all[1]->lambda),    "lambda_pos/F");
-   all_tree->Branch("fdenergy_pos",  &(all[1]->fdenergy),  "fdenergy_pos/F");
-   all_tree->Branch("shfoot_pos",    &(all[1]->shfoot),    "shfoot_pos/F");
-   all_tree->Branch("shwsize_pos",   &(all[1]->shwsize),   "shwsize_pos/F");
-   all_tree->Branch("ldfbeta_pos",   &(all[1]->ldfbeta),   "ldfbeta_pos/F");
-   all_tree->Branch("curvature_pos", &(all[1]->curvature), "curvature_pos/F");
-   all_tree->Branch("nrmu_pos",      &(all[1]->nrmu),      "nrmu_pos/F");
-   all_tree->Branch("risetime_pos",  &(all[1]->risetime),  "risetime_pos/F");
-   all_tree->Branch("risetimerecalc_pos",  &(all[1]->risetimerecalc),  "risetimerecalc_pos/F");
-   all_tree->Branch("aop_pos",       &(all[1]->aop),       "aop_pos/F");
-   all_tree->Branch("zenith_pos",    &(all[1]->zenith),    "zenith_pos/F");
+   all_tree->Branch("xmax_pos",      &(all[2]->xmax),      "xmax_pos/F");
+   all_tree->Branch("x0_pos",        &(all[2]->x0),        "x0_pos/F");
+   all_tree->Branch("lambda_pos",    &(all[2]->lambda),    "lambda_pos/F");
+   all_tree->Branch("sdenergy_pos",  &(all[2]->sdenergy),  "sdenergy_pos/F");
+   all_tree->Branch("fdenergy_pos",  &(all[2]->fdenergy),  "fdenergy_pos/F");
+   all_tree->Branch("shfoot_pos",    &(all[2]->shfoot),    "shfoot_pos/F");
+   all_tree->Branch("shwsize_pos",   &(all[2]->shwsize),   "shwsize_pos/F");
+   all_tree->Branch("ldfbeta_pos",   &(all[2]->ldfbeta),   "ldfbeta_pos/F");
+   all_tree->Branch("curvature_pos", &(all[2]->curvature), "curvature_pos/F");
+   all_tree->Branch("nrmu_pos",      &(all[2]->nrmu),      "nrmu_pos/F");
+   all_tree->Branch("risetime_pos",  &(all[2]->risetime),  "risetime_pos/F");
+   all_tree->Branch("risetimerecalc_pos",  &(all[2]->risetimerecalc),  "risetimerecalc_pos/F");
+   all_tree->Branch("aop_pos",       &(all[2]->aop),       "aop_pos/F");
+   all_tree->Branch("zenithSD_pos",  &(all[2]->zenithSD),  "zenithSD_pos/F");
+   all_tree->Branch("azimuthSD_pos", &(all[2]->azimuthSD), "azimuthSD_pos/F");
+   all_tree->Branch("zenithFD_pos",  &(all[2]->zenithFD),  "zenithFD_pos/F");
+   all_tree->Branch("azimuthFD_pos", &(all[2]->azimuthFD), "azimuthFD_pos/F");
 
 /*   for(int i = 0; i < 3; i++)
    {
@@ -1118,7 +1159,7 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
 
          if(!goodrec) recfail[1]++;
 
-         *itemp = GetEyeLongestTrack();
+         *itemp = GetEyeBestTrack();
          if( (*itemp == -1) || ((acteyes[*itemp].GetFdRecShower()).GetEnergy() == 0) )
          {
             cout << "Error! The selected eye has no valid reconstructions." << endl;
@@ -1132,36 +1173,42 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
             sig[0]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0();
             sig[0]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda();
             sig[0]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy();
-            sig[0]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith();
+            sig[0]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith();
+            sig[0]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetAzimuth();
             all[0]->xmax = (acteyes[*itemp].GetFdRecShower()).GetXmax();
             all[0]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0();
             all[0]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda();
             all[0]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy();
-            all[0]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith();
+            all[0]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith();
+            all[0]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetZenith();
 
             // Write out for measured value minus error
             sig[1]->xmax = (acteyes[*itemp].GetFdRecShower()).GetXmax() - (acteyes[*itemp].GetFdRecShower()).GetXmaxError();
             sig[1]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0() - (acteyes[*itemp].GetFdRecShower()).GetX0Error();
             sig[1]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda() - (acteyes[*itemp].GetFdRecShower()).GetLambdaError();
             sig[1]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy() - (acteyes[*itemp].GetFdRecShower()).GetEnergyError();
-            sig[1]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith() - (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            sig[1]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith() - (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            sig[1]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetAzimuth() - (acteyes[*itemp].GetFdRecShower()).GetAzimuthError();
             all[1]->xmax = (acteyes[*itemp].GetFdRecShower()).GetXmax() - (acteyes[*itemp].GetFdRecShower()).GetXmaxError();
             all[1]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0() - (acteyes[*itemp].GetFdRecShower()).GetX0Error();
             all[1]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda() - (acteyes[*itemp].GetFdRecShower()).GetLambdaError();
             all[1]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy() - (acteyes[*itemp].GetFdRecShower()).GetEnergyError();
-            all[1]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith() - (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            all[1]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith() - (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            all[1]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetAzimuth() - (acteyes[*itemp].GetFdRecShower()).GetAzimuthError();
 
             // Write out for measured value plus error
             sig[2]->xmax = (acteyes[*itemp].GetFdRecShower()).GetXmax() + (acteyes[*itemp].GetFdRecShower()).GetXmaxError();
             sig[2]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0() + (acteyes[*itemp].GetFdRecShower()).GetX0Error();
             sig[2]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda() + (acteyes[*itemp].GetFdRecShower()).GetLambdaError();
             sig[2]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy() + (acteyes[*itemp].GetFdRecShower()).GetEnergyError();
-            sig[2]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith() + (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            sig[2]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith() + (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            sig[2]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetAzimuth() + (acteyes[*itemp].GetFdRecShower()).GetAzimuthError();
             all[2]->xmax = (acteyes[*itemp].GetFdRecShower()).GetXmax() + (acteyes[*itemp].GetFdRecShower()).GetXmaxError();
             all[2]->x0 = (acteyes[*itemp].GetFdRecShower()).GetX0() + (acteyes[*itemp].GetFdRecShower()).GetX0Error();
             all[2]->lambda = (acteyes[*itemp].GetFdRecShower()).GetLambda() + (acteyes[*itemp].GetFdRecShower()).GetLambdaError();
             all[2]->fdenergy = (acteyes[*itemp].GetFdRecShower()).GetEnergy() + (acteyes[*itemp].GetFdRecShower()).GetEnergyError();
-            all[2]->zenith = (acteyes[*itemp].GetFdRecShower()).GetZenith() + (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            all[2]->zenithFD = (acteyes[*itemp].GetFdRecShower()).GetZenith() + (acteyes[*itemp].GetFdRecShower()).GetZenithError();
+            all[2]->azimuthFD = (acteyes[*itemp].GetFdRecShower()).GetAzimuth() + (acteyes[*itemp].GetFdRecShower()).GetAzimuthError();
 
             if(GetShowerFoot(*itemp, acteyes) == 0)
             {
@@ -1182,7 +1229,8 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
                  << "\t- Lambda = " << sig[0]->lambda << " (" << sig[1]->lambda << ", " << sig[2]->lambda << ")" << endl
                  << "\t- FD Energy = " << sig[0]->fdenergy << " (" << sig[1]->fdenergy << ", " << sig[2]->fdenergy << ")" << endl
                  << "\t- Shower foot = " << sig[0]->shfoot << " (" << sig[1]->shfoot << ", " << sig[2]->shfoot << ")" << endl
-                 << "\t- FD Zenith angle = " << sig[0]->zenith << " (" << sig[1]->zenith << ", " << sig[2]->zenith << ")" << endl;
+                 << "\t- FD Zenith angle = " << sig[0]->zenithFD << " (" << sig[1]->zenithFD << ", " << sig[2]->zenithFD << ")" << endl
+                 << "\t- FD Azimuth angle = " << sig[0]->azimuthFD << " (" << sig[1]->azimuthFD << ", " << sig[2]->azimuthFD << ")" << endl;
          }
       }
 
@@ -1212,38 +1260,59 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
 
       // Write out for measured value
       sig[0]->shwsize = sdrecshw->GetShowerSize();
+      sig[0]->sdenergy = sdrecshw->GetEnergy();
       sig[0]->ldfbeta = sdrecshw->GetBeta();
       sig[0]->curvature = sdrecshw->GetCurvature();
       sig[0]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000();
+      sig[0]->zenithSD = sdrecshw->GetZenith();
+      sig[0]->azimuthSD = sdrecshw->GetAzimuth();
       all[0]->shwsize = sdrecshw->GetShowerSize();
+      all[0]->sdenergy = sdrecshw->GetEnergy();
       all[0]->ldfbeta = sdrecshw->GetBeta();
       all[0]->curvature = sdrecshw->GetCurvature();
       all[0]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000();
+      all[0]->zenithSD = sdrecshw->GetZenith();
+      all[0]->azimuthSD = sdrecshw->GetAzimuth();
 
       // Write out for measured value minus error
       sig[1]->shwsize = sdrecshw->GetShowerSize() - sdrecshw->GetShowerSizeError();
+      sig[1]->sdenergy = sdrecshw->GetEnergy() - sdrecshw->GetEnergyError();
       sig[1]->ldfbeta = sdrecshw->GetBeta() - sdrecshw->GetBetaError();
       sig[1]->curvature = sdrecshw->GetCurvature() - sdrecshw->GetCurvatureError();
       sig[1]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000() - sdrecshw->GetRiseTimeResults().GetRiseTime1000Error();
+      sig[1]->zenithSD = sdrecshw->GetZenith() - sdrecshw->GetZenithError();
+      sig[1]->azimuthSD = sdrecshw->GetAzimuth() - sdrecshw->GetAzimuthError();
       all[1]->shwsize = sdrecshw->GetShowerSize() - sdrecshw->GetShowerSizeError();
+      all[1]->sdenergy = sdrecshw->GetEnergy() - sdrecshw->GetEnergyError();
       all[1]->ldfbeta = sdrecshw->GetBeta() - sdrecshw->GetBetaError();
       all[1]->curvature = sdrecshw->GetCurvature() - sdrecshw->GetCurvatureError();
       all[1]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000() - sdrecshw->GetRiseTimeResults().GetRiseTime1000Error();
+      all[1]->zenithSD = sdrecshw->GetZenith() - sdrecshw->GetZenithError();
+      all[1]->azimuthSD = sdrecshw->GetAzimuth() - sdrecshw->GetAzimuthError();
 
       // Write out for measured value plus error
       sig[2]->shwsize = sdrecshw->GetShowerSize() + sdrecshw->GetShowerSizeError();
+      sig[2]->sdenergy = sdrecshw->GetEnergy() + sdrecshw->GetEnergyError();
       sig[2]->ldfbeta = sdrecshw->GetBeta() + sdrecshw->GetBetaError();
       sig[2]->curvature = sdrecshw->GetCurvature() + sdrecshw->GetCurvatureError();
       sig[2]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000() + sdrecshw->GetRiseTimeResults().GetRiseTime1000Error();
+      sig[2]->zenithSD = sdrecshw->GetZenith() + sdrecshw->GetZenithError();
+      sig[2]->azimuthSD = sdrecshw->GetAzimuth() + sdrecshw->GetAzimuthError();
       all[2]->shwsize = sdrecshw->GetShowerSize() + sdrecshw->GetShowerSizeError();
+      all[2]->sdenergy = sdrecshw->GetEnergy() + sdrecshw->GetEnergyError();
       all[2]->ldfbeta = sdrecshw->GetBeta() + sdrecshw->GetBetaError();
       all[2]->curvature = sdrecshw->GetCurvature() + sdrecshw->GetCurvatureError();
       all[2]->risetime = sdrecshw->GetRiseTimeResults().GetRiseTime1000() + sdrecshw->GetRiseTimeResults().GetRiseTime1000Error();
+      all[2]->zenithSD = sdrecshw->GetZenith() + sdrecshw->GetZenithError();
+      all[2]->azimuthSD = sdrecshw->GetAzimuth() + sdrecshw->GetAzimuthError();
 
       cout << "\t- Shower size (replacement for S1000) = " << sig[0]->shwsize << " (" << sig[1]->shwsize << ", " << sig[2]->shwsize << ")" << endl
+           << "\t- SD Energy = " << sig[0]->sdenergy << " (" << sig[1]->sdenergy << ", " << sig[2]->sdenergy << ")" << endl
            << "\t- LDF Beta = " << sig[0]->ldfbeta << " (" << sig[1]->ldfbeta << ", " << sig[2]->ldfbeta << ")" << endl
            << "\t- Curvature R = " << sig[0]->curvature << " (" << sig[1]->curvature << ", " << sig[2]->curvature << ")" << endl
-           << "\t- Risetime at 1000m = " << sig[0]->risetime << " (" << sig[1]->risetime << ", " << sig[2]->risetime << ")" << endl;
+           << "\t- Risetime at 1000m = " << sig[0]->risetime << " (" << sig[1]->risetime << ", " << sig[2]->risetime << ")" << endl
+           << "\t- SD Zenith angle = " << sig[0]->zenithSD << " (" << sig[1]->zenithSD << ", " << sig[2]->zenithSD << ")" << endl
+           << "\t- SD Azimuth angle = " << sig[0]->azimuthSD << " (" << sig[1]->azimuthSD << ", " << sig[2]->azimuthSD << ")" << endl;
 
       dtemp[0] = 0;
       dtemp[1] = 0;
@@ -1257,10 +1326,8 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
          // Write out -1 values, since recalculation failed
          sig[0]->risetimerecalc = -1;
          all[0]->risetimerecalc = -1;
-         // Write out for measured value minus error // TODO: Still need to add Risetime error calculation
          sig[1]->risetimerecalc = -1;
          all[1]->risetimerecalc = -1;
-         // Write out for measured value plus error // TODO: Still need to add Risetime error calculation
          sig[2]->risetimerecalc = -1;
          all[2]->risetimerecalc = -1;
       }
@@ -1269,14 +1336,20 @@ void AdstMva::RewriteObservables(unsigned int nrfiles, int innr, Observables **s
          // Write out for measured value
          sig[0]->risetimerecalc = dtemp[0];
          all[0]->risetimerecalc = dtemp[0];
-         // Write out for measured value minus error // TODO: Still need to add Risetime error calculation
          sig[1]->risetimerecalc = dtemp[0] - dtemp[1];
          all[1]->risetimerecalc = dtemp[0] - dtemp[1];
-         // Write out for measured value plus error // TODO: Still need to add Risetime error calculation
          sig[2]->risetimerecalc = dtemp[0] + dtemp[1];
          all[2]->risetimerecalc = dtemp[0] + dtemp[1];
 
          cout << "\t- Risetime (recalculated) = " << sig[0]->risetimerecalc << " (" << sig[1]->risetimerecalc << ", " << sig[2]->risetimerecalc << ")" << endl;
+
+         // Disregard any events, where the error of calculated risetime is above 100% - TODO: must make sure this will not remove good events!
+	 if( (dtemp[1])/(dtemp[0]) > 1.0 )
+	 {
+            cout << "Error! Risetime error above 50%. " << dtemp[1] << endl;
+	    if(goodrec) recfail[6]++;
+	    goodrec = false;
+	 }
       }
 
       if(sig[0]->risetimerecalc < 0) // TODO: For some reason, some of the Risetime results are -1 -> check why and maybe try to calculate them from actual VEM traces (taken from /data0/gkukec/Programi/offline-trunk/v3r3/Modules/SdReconstruction/Risetime1000LLL/Risetime1000LLL.cc)

@@ -204,6 +204,17 @@ else
             tar -zxf $ball
          done
       fi
+      # Replace original Factory.cxx with edited one
+      grep -q "TRANSFORMDIR" $startdir/input/Factory.cxx.in
+      if [ $? == 0 ]; then
+        sed "s/TRANSFORMDIR/$basedir/g" $startdir/input/Factory.cxx.in > $startdir/input/Factory.cxx.mid
+      fi
+      diff -q $TMVASYS/src/Factory.cxx $startdir/input/Factory.cxx.mid
+      if [ $? != 0 ]; then
+        cp $startdir/input/Factory.cxx.mid $TMVASYS/src/Factory.cxx
+      fi
+      rm -fr $startdir/input/Factory.cxx.mid
+      # Replace original Factory.cxx with edited one
       cd $TMVASYS
       make
       if [ $? == 0 ]; then
